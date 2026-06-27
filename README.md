@@ -446,6 +446,21 @@ Yes, apply them.
 
 ---
 
+## Additional Tools
+
+**rtk** output commpression tool
+```bash
+cargo install --git https://github.com/rtk-ai/rtk
+rtk init -g --opencode
+```
+
+**opencode-dcp** conversation context manager
+```bash
+opencode plugin @tarquinen/opencode-dcp@latest --global
+```
+
+---
+
 ## Tips & Conventions
 
 **Keep `/plan` arguments to a headline.** One line sets the topic; the planner's questions fill in the rest. Long arguments with special characters can confuse the command parser.
