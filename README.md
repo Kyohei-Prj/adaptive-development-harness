@@ -57,11 +57,19 @@ User idea
 │  Stage 3 · FEEDBACK             (lead agent) │
 │                                             │
 │  phase-reviewer inspects the git diff.      │
-│  Checks testing compliance.                 │
-│  Surfaces risks for future phases.          │
-│  doc-updater applies approved changes.      │
+│  Classifies issues as blocking/non-blocking.│
+│  Checks testing compliance per task tag.    │
 │                                             │
-│  Output: updated docs + feedback-log entry  │
+│  ┌─────────────────────────────────────┐   │
+│  │  For each confirmed blocking issue: │   │
+│  │  issue-resolver fixes it (TDD/Smoke)│   │
+│  │  lead reports result before next    │   │
+│  └─────────────────────────────────────┘   │
+│                                             │
+│  doc-updater applies approved doc changes.  │
+│                                             │
+│  Output: fixed code + updated docs          │
+│          + feedback-log entry               │
 └──────────────────┬──────────────────────────┘
                    │
                    ▼
@@ -71,7 +79,7 @@ User idea
 **Key design principles:**
 
 - **Context hygiene** — the primary (lead) session never holds diffs. All file edits happen inside sub-agent child sessions. The lead only receives task summaries.
-- **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime.
+- **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
 - **Document-first** — architecture, spec, and implementation plan are the source of truth throughout. They evolve via the Feedback stage, never silently.
 - **Minimal footprint** — 5 agent files, 3 command files, 1 skill. No plugins, no MCP servers, no external services.
 
@@ -94,8 +102,9 @@ your-project/
 │   ├── agents/
 │   │   ├── planner.md                   # Primary — Planning stage
 │   │   ├── lead.md                      # Primary — Implementation & Feedback
-│   │   ├── task-implementer.md          # Subagent — executes one coding task
-│   │   ├── phase-reviewer.md            # Subagent — read-only phase review
+│   │   ├── task-implementer.md          # Subagent — executes one planned coding task
+│   │   ├── phase-reviewer.md            # Subagent — classifies issues, read-only review
+│   │   ├── issue-resolver.md            # Subagent — fixes one blocking issue
 │   │   └── doc-updater.md               # Subagent — applies approved doc edits
 │   ├── commands/
 │   │   ├── plan.md                      # /plan <idea>
@@ -175,18 +184,21 @@ The reviewer uses this commit as its diff baseline. Without it, the diff is unde
 
 ### Stage 3 — Feedback
 
-**Agent:** `lead` (delegates to `phase-reviewer`, then `doc-updater`)  
+**Agent:** `lead` (delegates to `phase-reviewer` → `issue-resolver` per blocking issue → `doc-updater`)  
 **Trigger:** `/review-phase <n> <slug>`  
-**Output:** updated docs + a new entry in `feedback-log.md`
+**Output:** fixed code + updated docs + a new entry in `feedback-log.md`
 
 `phase-reviewer` inspects the actual git diff and test results for the phase. It reports in order:
 
 1. **Testing compliance** — did TDD tasks produce tests? Did smoke tasks run a check?
-2. **Issues / bugs** found in the implementation
-3. **Risks for future phases** — architecture drift, scope creep, tech debt
-4. **Suggested doc edits** — concrete, targeted changes
+2. **Blocking issues** — each with affected file(s) and a one-sentence reason it must be resolved before the next phase starts
+3. **Non-blocking findings** — tech debt, minor risks, improvements that don't prevent continuing
+4. **Risks for future phases** — architecture drift, scope creep, concerns about upcoming phases
+5. **Suggested doc edits** — concrete, targeted changes to the affected docs
 
-`lead` presents the findings and asks whether to apply them. On your confirmation, `doc-updater` makes the targeted edits to the affected docs and appends a dated entry to `feedback-log.md`.
+`lead` presents the full report and asks you to confirm which blocking issues to resolve. For each confirmed blocking issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on.
+
+Once all blocking issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied.
 
 Repeat **Implementation → Feedback** for each phase until the plan is complete.
 
@@ -197,12 +209,13 @@ Repeat **Implementation → Feedback** for each phase until the plan is complete
 | Agent | Mode | Role | Permissions |
 |---|---|---|---|
 | `planner` | primary | Asks questions, writes initial docs | edit: allow · bash: deny · webfetch: ask |
-| `lead` | primary | Orchestrates, delegates, summarizes | edit/bash: ask · task: whitelisted 3 subagents only |
-| `task-implementer` | subagent | Implements one task (TDD or Smoke path) | edit/bash/webfetch: allow · task: deny |
-| `phase-reviewer` | subagent | Read-only review, compliance check | edit: deny · bash: read-only git + test commands only |
-| `doc-updater` | subagent | Applies approved doc edits | edit: allow (docs only) · bash: deny |
+| `lead` | primary | Orchestrates, delegates, summarizes | edit/bash: ask · task: whitelisted 4 subagents only |
+| `task-implementer` | subagent | Implements one planned task (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
+| `phase-reviewer` | subagent | Read-only review, classifies blocking/non-blocking issues, compliance check | edit: deny · bash: read-only git + test commands only |
+| `issue-resolver` | subagent | Fixes one blocking issue found by reviewer (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
+| `doc-updater` | subagent | Applies approved doc edits after issues are resolved | edit: allow (docs only) · bash: deny |
 
-`lead` is locked to its three named subagents — it cannot invoke any other subagent. `task-implementer` cannot spawn further subagents, preventing unbounded delegation chains.
+`lead` is locked to its four named subagents — it cannot invoke any other subagent. Neither `task-implementer` nor `issue-resolver` can spawn further subagents, preventing unbounded delegation chains.
 
 ---
 
@@ -375,26 +388,52 @@ Testing compliance:
   Task 1.2 [tdd]   — 8 new tests, all passing ✓
   Task 1.3 [tdd]   — 12 new tests, all passing ✓
 
-Issues: Route handler for DELETE /todos/{id} returns 200 instead of 204.
+Blocking issues:
+  - Issue: DELETE /todos/{id} returns 200 instead of 204
+    Affected: app/routes/todos.py
+    Blocking because: violates spec.md acceptance criterion
+      "DELETE returns 204 No Content"
 
-Risks for Phase 2 (frontend): The Todo response schema doesn't include
-a `created_at` field. The frontend may need it for sorting — worth adding
-to the API now rather than a breaking change later.
+Non-blocking findings:
+  - The Todo response schema omits a `created_at` field the frontend
+    may need for sorting. Low risk for Phase 2 but worth tracking.
+
+Risks for future phases:
+  - If created_at is added later it will be a breaking API change.
 
 Suggested doc edits:
-  spec.md: Add acceptance criterion — DELETE returns 204 No Content
-  implementation-plan.md: Add task to Phase 2 — add created_at to response schema
+  implementation-plan.md: Add task to Phase 2 for created_at in response schema
 ```
 
-`lead` presents this to you:
+`lead` presents this and asks:
 
-> Should I apply these doc updates?
+> There is 1 blocking issue. Resolve it now before updating the docs?
+
+```
+Yes, resolve it.
+```
+
+`lead` delegates to `issue-resolver`, passing the issue description, the affected file, and the relevant spec criterion. `issue-resolver` applies the TDD path — writes a failing test asserting 204, fixes the route handler, runs pytest green — and reports back:
+
+```
+Approach:       TDD
+Issue fixed:    DELETE /todos/{id} now returns 204 No Content
+Files changed:  app/routes/todos.py, tests/test_routes.py
+Tests written:  tests/test_routes.py : test_delete_todo_returns_204
+Test result:    PASS (pytest tests/test_routes.py::test_delete_todo_returns_204)
+Deviations:     none
+Residual risks: none
+```
+
+`lead` reports the resolution and asks:
+
+> Blocking issue resolved. Apply the doc updates?
 
 ```
 Yes, apply them.
 ```
 
-`doc-updater` makes the targeted edits and appends to `feedback-log.md`.
+`doc-updater` makes the targeted edits and appends a single dated entry to `feedback-log.md` covering both the original findings and the fix applied.
 
 ### Step 5 — Continue
 
@@ -417,26 +456,15 @@ Yes, apply them.
 
 **Tagging is the planner's job, not the implementer's.** The `task-implementer` has a classification fallback, but it's less reliable than an explicit tag. Push back on the planner if it produces tasks without tags.
 
+**Blocking vs non-blocking is the reviewer's call, not yours.** The `phase-reviewer` classifies issues before you see them. You decide which blocking issues to confirm for resolution — but you don't need to triage the raw list yourself.
+
+**Issue resolution is always sequential.** `issue-resolver` runs one fix at a time. If you have three blocking issues, expect three resolution cycles before the doc update. This is intentional — each fix may affect the next.
+
 **Use `@explore` or `@scout` for quick lookups.** If you need to check something in the codebase during Implementation without spinning up a `task-implementer`, the built-in `@explore` and `@scout` subagents are available and lighter-weight.
 
 **One slug per unit of work.** A slug connects docs, git branches, and commit messages. Using the same slug throughout (`git checkout -b feat/todo-app`, `git commit -m "feat(todo-app): ..."`) keeps the history readable.
 
 **Docs evolve; don't regenerate them.** The `doc-updater` makes targeted edits. If a doc needs a large structural change, do it in a Feedback step with your explicit confirmation — never ask any agent to rewrite a doc from scratch mid-project.
-
----
-
-## Additional Tools
-
-**rtk** output commpression tool
-```bash
-cargo install --git https://github.com/rtk-ai/rtk
-rtk init -g --opencode
-```
-
-**opencode-dcp** conversation context manager
-```bash
-opencode plugin @tarquinen/opencode-dcp@latest --global
-```
 
 ---
 
@@ -450,6 +478,9 @@ The phase wasn't committed before running `/review-phase`. Run `git add -A && gi
 
 **`task-implementer` reports FAIL and stops**  
 This is the intended behavior. Read the root cause in the summary, decide whether to fix the failing test, adjust the task description, or update the plan. Then re-run `/implement-phase` for that phase — `lead` will re-delegate the failed task.
+
+**`issue-resolver` reports FAIL and stops**  
+Same principle. Read the root cause, decide whether the issue description was ambiguous or the fix is genuinely hard. You can rephrase the issue and ask `lead` to retry, defer it (treat as non-blocking for now and note it in the feedback log), or fix it manually and tell `lead` to proceed.
 
 **A task has no `[type: ...]` tag**  
 `task-implementer` will self-classify (defaulting to TDD when uncertain) and state its classification at the start of its response. You can correct it by responding to the lead with the right type before the next task is delegated. Fix the tag in `implementation-plan.md` for the record.
