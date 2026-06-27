@@ -1,0 +1,117 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "lsp": true,
+  "formatter": true,
+  "mcp": {
+    "context7": {
+      "enabled": true,
+      "headers": {
+	"CONTEXT7_API_KEY": ""
+      },
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "CopilotKit MCP": {
+      "type": "local",
+      "command": [
+	"npx",
+	"-y",
+	"mcp-remote",
+	"https://mcp.copilotkit.ai/mcp"
+      ],
+      "enabled": false,
+      "timeout": 30000
+    },
+    "deepwiki": {
+      "enabled": false,
+      "type": "remote",
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "serena": {
+      "command": [
+	"uvx",
+	"--from",
+	"git+https://github.com/oraios/serena",
+	"serena",
+	"start-mcp-server",
+	"--context",
+	"ide-assistant",
+	"--project",
+	".",
+	"--enable-web-dashboard",
+	"false"
+      ],
+      "enabled": true,
+      "environment": {
+	"PYTHONUNBUFFERED": "1"
+      },
+      "type": "local"
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": false
+    },
+    "elisp-dev": {
+      "type": "local",
+      "command": [
+	"/home/kyohei/.emacs.d/emacs-mcp-stdio.sh",
+	"--init-function=elisp-dev-mcp-enable",
+	"--stop-function=elisp-dev-mcp-disable",
+	"--server-id=elisp-dev-mcp"
+      ],
+      "enabled": false
+    }
+  },
+  "provider": {
+    "llama.cpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama-server (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8089/v1"
+      },
+      "models": {
+        "qwen3.6-27b-mtp": {
+          "name": "Qwen3.6-27B-MTP",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    },
+    "dflash": {
+      "npm": "@ai-sdk/openai",
+      "name": "luce-dflash (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8089/v1"
+      },
+      "models": {
+        "qwen3.6-27b-dflash": {
+          "name": "Qwen3.6-27B-DFlash",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    }
+  },
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "**/*.min.js",
+      "**/*.map",
+      "**/*.lock",
+      ".venv/**",
+      ".opencode/**"
+    ]
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true
+  }
+}
