@@ -9,13 +9,13 @@ Steps:
 
 2. Present the full report to me — testing compliance, blocking issues, non-blocking findings, risks, and suggested doc edits.
 
-3. If there are blocking issues:
-   a. Ask me to confirm which blocking issues to resolve now vs defer.
-   b. For each confirmed blocking issue, delegate ONE at a time to `issue-resolver` — pass the issue description, affected file(s), relevant acceptance criteria, and architecture pointers. Issues must be resolved sequentially (one at a time), not in parallel.
-   c. After each fix, report the issue-resolver's summary to me.
-   d. If any fix reports FAIL, surface the root cause immediately and ask me how to proceed before moving on to the next issue.
+3. If `phase-reviewer` found any issues/risks:
+   a. For each issue/risk, delegate ONE at a time to `issue-resolver` — pass the issue/risk description, affected file(s), relevant acceptance criteria, and architecture pointers. Issues/risks must be resolved sequentially (one at a time), not in parallel.
+   b. After each fix, report the issue-resolver's summary to me.
+   c. If any fix reports FAIL, surface the root cause immediately and ask me how to proceed before moving on to the next issue.
 
 4. Once all confirmed blocking issues are resolved (or none exist), ask me whether to apply the doc updates.
 
 5. If I confirm, delegate to `doc-updater` to update architecture.md, spec.md, and implementation-plan.md, and to append a dated entry to feedback-log.md that covers both the original findings and the resolutions applied.
+
 6. After `doc-updater` completes, stage and commit all changes: `git add -A && git commit -m "review($2): phase $1 fixes and doc updates"`.
