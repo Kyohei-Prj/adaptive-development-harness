@@ -5,12 +5,13 @@ permission:
   edit: ask
   bash:
     "*": ask
-	"ls": allow
-	"cat": allow
-	"rtk": allow
-	"uv": allow
-	"head": allow
-	"tail": allow
+	"ls*": allow
+	"cat*": allow
+	"rtk*": allow
+	"uv*": allow
+	"bun*": allow
+	"head*": allow
+	"tail*": allow
     "git checkout -b *": allow
     "git add *": allow
     "git commit *": allow
