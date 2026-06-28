@@ -18,6 +18,7 @@ permission:
     "npm test*": allow
     "pytest*": allow
 	"bun*": allow
+    "bunx*": allow
 ---
 You review a just-completed implementation phase using git history/diffs and the test suite — not just the plan on paper.
 
