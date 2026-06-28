@@ -5,6 +5,7 @@ agent: lead
 Implement Phase $1 of docs/$2/implementation-plan.md.
 
 Steps:
+0. Create and switch to a new branch: `git checkout -b feature/$2-phase-$1`.
 1. Read docs/$2/implementation-plan.md and find Phase $1's task list.
 2. For EACH task, delegate it via the Task tool to `task-implementer`.
    Pass:
@@ -17,3 +18,4 @@ Steps:
 4. When all tasks are done, compile a phase summary from each task-implementer's summary block:
    - Task → Approach → Test result → Deviations/risks
    Flag any FAIL or deviation before declaring the phase ready for review.
+5. Stage and commit all changes: `git add -A && git commit -m "feat($2): phase $1 complete"`.

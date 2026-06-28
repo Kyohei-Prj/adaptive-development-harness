@@ -3,12 +3,13 @@
 This project uses a 3-stage AI-driven workflow on top of OpenCode.
 
 ## Stages
-1. **Planning** — `/plan <idea>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`.
+1. **Planning** — `/plan <idea>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`. Commit the docs manually before starting Implementation.
 2. **Implementation** — `/implement-phase <n> <slug>` (uses the `lead` agent).
-   `lead` MUST delegate each task to the `task-implementer` subagent via the Task tool — one task at a time (unless tagged [parallel-with]) — rather
-   than editing files itself.
+   `lead` creates and switches to `feature/<slug>-phase-<n>`, MUST delegate each task to the `task-implementer` subagent via the Task tool — one task at a time (unless tagged [parallel-with]) — rather than editing files itself, then commits the completed phase.
 3. **Feedback** — `/review-phase <n> <slug>` (uses the `lead` agent).
-   `lead` delegates the review to `phase-reviewer`, presents findings to the user, and only on confirmation delegates doc updates to `doc-updater`.
+   `lead` delegates the review to `phase-reviewer`, presents findings to the user, delegates confirmed blocking fixes to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. Merging the feature branch to main is the user's responsibility.
+
+**Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases without pausing for confirmation. `lead` stops only when a subagent reports FAIL and waits for user direction.
 
 ## Context hygiene rule
 Any agent doing actual file edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session

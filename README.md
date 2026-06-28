@@ -171,14 +171,7 @@ Tasks marked `[parallel-with: X]` in the plan may be delegated simultaneously. A
 
 `lead` compiles a phase summary from each task-implementer's summary block and presents it to you before declaring the phase ready for review.
 
-**Commit after the phase completes** (before running `/review-phase`):
-
-```bash
-git add -A
-git commit -m "feat(<slug>): phase <n> complete"
-```
-
-The reviewer uses this commit as its diff baseline. Without it, the diff is undefined.
+`lead` then commits the completed phase automatically (`feat(<slug>): phase <n> complete`). The reviewer uses this commit as its diff baseline.
 
 ---
 
@@ -198,9 +191,36 @@ The reviewer uses this commit as its diff baseline. Without it, the diff is unde
 
 `lead` presents the full report and asks you to confirm which blocking issues to resolve. For each confirmed blocking issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on.
 
-Once all blocking issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied.
+Once all blocking issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
+
+When all phases are complete, merge the feature branch to main yourself.
 
 Repeat **Implementation → Feedback** for each phase until the plan is complete.
+
+---
+
+### Automated Full Run (optional)
+
+**Trigger:** `/autorun <slug>`
+
+If you trust the plan and want to skip the per-phase checkpoints, `/autorun` runs the entire Implementation → Feedback cycle for every phase in one go. `lead` iterates through all phases in order; for each phase it:
+
+1. Creates the `feature/<slug>-phase-N` branch
+2. Delegates all tasks to `task-implementer` (same TDD / Smoke rules apply)
+3. Commits the completed phase
+4. Delegates review to `phase-reviewer`
+5. Resolves **all** blocking issues via `issue-resolver` (sequentially, no confirmation)
+6. Delegates doc updates to `doc-updater`
+7. Commits fixes and doc updates
+8. Reports a per-phase progress summary, then moves to the next phase
+
+The only times `lead` stops and waits for you are:
+- A `task-implementer` reports **FAIL** — it cannot proceed until you decide whether to fix, skip, or adjust the task.
+- An `issue-resolver` reports **FAIL** — it cannot proceed until you decide how to handle the unresolved blocker.
+
+When all phases are complete, `lead` reports a full run summary and reminds you to merge to main.
+
+Use `/implement-phase` and `/review-phase` individually when you want to inspect or adjust things between phases; use `/autorun` when you want to let the agent go end-to-end.
 
 ---
 
@@ -226,6 +246,7 @@ Repeat **Implementation → Feedback** for each phase until the plan is complete
 | `/plan <idea>` | `planner` | Free-text headline | Start a Planning session |
 | `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks |
 | `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs |
+| `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically |
 
 ---
 
@@ -369,10 +390,7 @@ Task 1.3 — TDD   — PASS (pytest test_routes.py — 12 tests)
 Deviations: none
 ```
 
-```bash
-git add -A
-git commit -m "feat(todo-app): phase 1 complete"
-```
+`lead` then commits automatically: `feat(todo-app): phase 1 complete`.
 
 ### Step 4 — Review Phase 1
 
@@ -465,7 +483,7 @@ opencode plugin @tarquinen/opencode-dcp@latest --global
 
 **Keep `/plan` arguments to a headline.** One line sets the topic; the planner's questions fill in the rest. Long arguments with special characters can confuse the command parser.
 
-**Commit at two fixed points:** after Planning (the four docs) and after each phase completes (before review). These are the only two commit points you need to remember. The reviewer needs the post-phase commit as its diff baseline.
+**Commit once manually:** after Planning (the four docs). Everything after that — branching, phase commits, and review commits — is handled by `lead` automatically. Your only other git responsibility is merging the feature branch to main when all phases are done.
 
 **Close the planner session before implementing.** The `lead` agent needs a fresh primary session. Running `/implement-phase` inside a planner session uses an agent with `bash: deny`, which will block every sub-agent delegation.
 

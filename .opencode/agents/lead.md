@@ -3,7 +3,16 @@ description: Orchestrates Implementation and Feedback stages by delegating to su
 mode: primary
 permission:
   edit: ask
-  bash: ask
+  bash:
+    "*": ask
+	"ls": allow
+	"cat": allow
+	"head": allow
+	"tail": allow
+    "git checkout -b *": allow
+    "git add *": allow
+    "git commit *": allow
+    "git status": allow
   task:
     "*": deny
     "task-implementer": allow
