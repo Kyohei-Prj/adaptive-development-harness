@@ -5,18 +5,19 @@ permission:
   edit: deny
   bash:
     "*": ask
-	"ls": allow
-	"cat": allow
-	"rtk": allow
-	"uv": allow
-	"head": allow
-	"tail": allow
+	"ls*": allow
+	"cat*": allow
+	"rtk*": allow
+	"uv*": allow
+	"head*": allow
+	"tail*": allow
     "git diff*": allow
     "git log*": allow
     "git status": allow
     "git show*": allow
     "npm test*": allow
     "pytest*": allow
+	"bun*": allow
 ---
 You review a just-completed implementation phase using git history/diffs and the test suite — not just the plan on paper.
 
