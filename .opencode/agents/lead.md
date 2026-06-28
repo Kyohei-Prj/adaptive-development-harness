@@ -7,6 +7,8 @@ permission:
     "*": ask
 	"ls": allow
 	"cat": allow
+	"rtk": allow
+	"uv": allow
 	"head": allow
 	"tail": allow
     "git checkout -b *": allow

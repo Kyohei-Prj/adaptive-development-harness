@@ -5,6 +5,12 @@ permission:
   edit: deny
   bash:
     "*": ask
+	"ls": allow
+	"cat": allow
+	"rtk": allow
+	"uv": allow
+	"head": allow
+	"tail": allow
     "git diff*": allow
     "git log*": allow
     "git status": allow

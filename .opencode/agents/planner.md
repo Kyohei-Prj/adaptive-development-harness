@@ -5,7 +5,7 @@ temperature: 0.2
 permission:
   edit: allow
   bash: deny
-  webfetch: ask
+  webfetch: allow
 ---
 You are the Planning agent in a 3-stage workflow (Planning → Implementation → Feedback).
 
