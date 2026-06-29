@@ -30,12 +30,12 @@ User idea
     │
     ▼
 ┌─────────────────────────────────────────────┐
-│  Stage 1 · PLANNING          (planner agent) │
+│  Stage 1 · PLANNING          (planner agent)│
 │                                             │
 │  One clarifying question at a time          │
 │  until requirements are clear.              │
 │                                             │
-│  Output: architecture.md                   │
+│  Output: architecture.md                    │
 │          spec.md                            │
 │          implementation-plan.md             │
 │          feedback-log.md (empty)            │
@@ -43,7 +43,7 @@ User idea
                    │  docs committed to git
                    ▼
 ┌─────────────────────────────────────────────┐
-│  Stage 2 · IMPLEMENTATION       (lead agent) │
+│  Stage 2 · IMPLEMENTATION       (lead agent)│
 │                                             │
 │  Phase by phase.                            │
 │  Each task → task-implementer subagent      │
@@ -54,17 +54,17 @@ User idea
                    │  phase committed to git
                    ▼
 ┌─────────────────────────────────────────────┐
-│  Stage 3 · FEEDBACK             (lead agent) │
+│  Stage 3 · FEEDBACK             (lead agent)│
 │                                             │
 │  phase-reviewer inspects the git diff.      │
 │  Classifies issues as blocking/non-blocking.│
 │  Checks testing compliance per task tag.    │
 │                                             │
-│  ┌─────────────────────────────────────┐   │
-│  │  For each confirmed blocking issue: │   │
-│  │  issue-resolver fixes it (TDD/Smoke)│   │
-│  │  lead reports result before next    │   │
-│  └─────────────────────────────────────┘   │
+│ ┌─────────────────────────────────────────┐ │
+│ │  For each confirmed issue or risk:      │ │
+│ │  issue-resolver fixes it (TDD/Smoke)    │ │
+│ │  lead reports result before next        │ │
+│ └─────────────────────────────────────────┘ │
 │                                             │
 │  doc-updater applies approved doc changes.  │
 │                                             │
@@ -104,7 +104,7 @@ your-project/
 │   │   ├── lead.md                      # Primary — Implementation & Feedback
 │   │   ├── task-implementer.md          # Subagent — executes one planned coding task
 │   │   ├── phase-reviewer.md            # Subagent — classifies issues, read-only review
-│   │   ├── issue-resolver.md            # Subagent — fixes one blocking issue
+│   │   ├── issue-resolver.md            # Subagent — fixes one issue or risk (blocking, non-blocking, future-phase)
 │   │   └── doc-updater.md               # Subagent — applies approved doc edits
 │   ├── commands/
 │   │   ├── plan.md                      # /plan <idea>
@@ -189,9 +189,9 @@ Tasks marked `[parallel-with: X]` in the plan may be delegated simultaneously. A
 4. **Risks for future phases** — architecture drift, scope creep, concerns about upcoming phases
 5. **Suggested doc edits** — concrete, targeted changes to the affected docs
 
-`lead` presents the full report and asks you to confirm which blocking issues to resolve. For each confirmed blocking issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on.
+`lead` presents the full report and asks you to confirm which items to resolve. For each confirmed item — whether blocking, non-blocking, or a future-phase risk — `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on.
 
-Once all blocking issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
+Once all confirmed items are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
 
 When all phases are complete, merge the feature branch to main yourself.
 
@@ -209,7 +209,7 @@ If you trust the plan and want to skip the per-phase checkpoints, `/autorun` run
 2. Delegates all tasks to `task-implementer` (same TDD / Smoke rules apply)
 3. Commits the completed phase
 4. Delegates review to `phase-reviewer`
-5. Resolves **all** blocking issues via `issue-resolver` (sequentially, no confirmation)
+5. Resolves **all** issues and risks (blocking, non-blocking, and future-phase risks) via `issue-resolver` (sequentially, no confirmation)
 6. Delegates doc updates to `doc-updater`
 7. Commits fixes and doc updates
 8. Reports a per-phase progress summary, then moves to the next phase
@@ -232,7 +232,7 @@ Use `/implement-phase` and `/review-phase` individually when you want to inspect
 | `lead` | primary | Orchestrates, delegates, summarizes | edit/bash: ask · task: whitelisted 4 subagents only |
 | `task-implementer` | subagent | Implements one planned task (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
 | `phase-reviewer` | subagent | Read-only review, classifies blocking/non-blocking issues, compliance check | edit: deny · bash: read-only git + test commands only |
-| `issue-resolver` | subagent | Fixes one blocking issue found by reviewer (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
+| `issue-resolver` | subagent | Fixes one issue or risk found by reviewer — blocking, non-blocking, or future-phase risk (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
 | `doc-updater` | subagent | Applies approved doc edits after issues are resolved | edit: allow (docs only) · bash: deny |
 
 `lead` is locked to its four named subagents — it cannot invoke any other subagent. Neither `task-implementer` nor `issue-resolver` can spawn further subagents, preventing unbounded delegation chains.
@@ -425,13 +425,13 @@ Suggested doc edits:
 
 `lead` presents this and asks:
 
-> There is 1 blocking issue. Resolve it now before updating the docs?
+> There are 3 items to resolve: 1 blocking issue, 1 non-blocking finding, and 1 future-phase risk. Which would you like to address now?
 
 ```
-Yes, resolve it.
+Resolve all of them.
 ```
 
-`lead` delegates to `issue-resolver`, passing the issue description, the affected file, and the relevant spec criterion. `issue-resolver` applies the TDD path — writes a failing test asserting 204, fixes the route handler, runs pytest green — and reports back:
+`lead` delegates to `issue-resolver` for each item, one at a time. First the blocking issue — `issue-resolver` applies the TDD path, writes a failing test asserting 204, fixes the route handler, runs pytest green:
 
 ```
 Approach:       TDD
@@ -489,9 +489,9 @@ opencode plugin @tarquinen/opencode-dcp@latest --global
 
 **Tagging is the planner's job, not the implementer's.** The `task-implementer` has a classification fallback, but it's less reliable than an explicit tag. Push back on the planner if it produces tasks without tags.
 
-**Blocking vs non-blocking is the reviewer's call, not yours.** The `phase-reviewer` classifies issues before you see them. You decide which blocking issues to confirm for resolution — but you don't need to triage the raw list yourself.
+**Blocking vs non-blocking is the reviewer's call, not yours.** The `phase-reviewer` classifies issues and risks before you see them. You decide which items to confirm for resolution — but you don't need to triage the raw list yourself.
 
-**Issue resolution is always sequential.** `issue-resolver` runs one fix at a time. If you have three blocking issues, expect three resolution cycles before the doc update. This is intentional — each fix may affect the next.
+**Issue resolution is always sequential.** `issue-resolver` runs one fix at a time. If you have three items to resolve, expect three resolution cycles before the doc update. This is intentional — each fix may affect the next.
 
 **Use `@explore` or `@scout` for quick lookups.** If you need to check something in the codebase during Implementation without spinning up a `task-implementer`, the built-in `@explore` and `@scout` subagents are available and lighter-weight.
 
