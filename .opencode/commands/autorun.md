@@ -26,9 +26,9 @@ Repeat steps 2–9 for EACH phase N (in ascending order):
 
 5. Delegate to `phase-reviewer` to review Phase N changes (via git diff/log), check testing compliance, and classify all issues as blocking or non-blocking.
 
-6. Resolve ALL blocking issues without asking for confirmation.
-   For each blocking issue, delegate to `issue-resolver` one at a time — sequentially, never in parallel.
-   Pass the issue description, affected file(s), relevant acceptance criteria, and architecture pointers.
+6. Resolve ALL issues and risks (blocking, non-blocking, and future-phase risks) without asking for confirmation.
+   For each item, delegate to `issue-resolver` one at a time — sequentially, never in parallel.
+   Pass the issue or risk description, affected file(s), relevant acceptance criteria, and architecture pointers.
    **If any issue-resolver reports FAIL: stop immediately. Report the root cause and the issue summary to the user, and wait for direction before continuing.**
 
 7. Delegate to `doc-updater` to apply all suggested doc edits and to append a dated entry to feedback-log.md covering both the original findings and all resolutions applied.
