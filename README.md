@@ -56,15 +56,17 @@ User idea
 ┌─────────────────────────────────────────────┐
 │  Stage 3 · FEEDBACK             (lead agent)│
 │                                             │
-│  phase-reviewer inspects the git diff.      │
-│  Classifies issues as blocking/non-blocking.│
-│  Checks testing compliance per task tag.    │
+│  phase-reviewer diffs against the branch's  │
+│  fork point. Classifies blocking/non-       │
+│  blocking. Checks testing compliance.       │
 │                                             │
-│ ┌─────────────────────────────────────────┐ │
-│ │  For each confirmed issue or risk:      │ │
-│ │  issue-resolver fixes it (TDD/Smoke)    │ │
-│ │  lead reports result before next        │ │
-│ └─────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────┐    │
+│  │  For each confirmed blocking/       │    │
+│  │  non-blocking issue: issue-resolver │    │
+│  │  fixes it (TDD/Smoke). Risks for    │    │
+│  │  future phases are logged, not      │    │
+│  │  fixed — they're speculative.       │    │
+│  └─────────────────────────────────────┘    │
 │                                             │
 │  doc-updater applies approved doc changes.  │
 │                                             │
@@ -104,7 +106,7 @@ your-project/
 │   │   ├── lead.md                      # Primary — Implementation & Feedback
 │   │   ├── task-implementer.md          # Subagent — executes one planned coding task
 │   │   ├── phase-reviewer.md            # Subagent — classifies issues, read-only review
-│   │   ├── issue-resolver.md            # Subagent — fixes one issue or risk (blocking, non-blocking, future-phase)
+│   │   ├── issue-resolver.md            # Subagent — fixes one blocking or non-blocking issue
 │   │   └── doc-updater.md               # Subagent — applies approved doc edits
 │   ├── commands/
 │   │   ├── plan.md                      # /plan <idea>
@@ -160,7 +162,7 @@ Then close the planner session before starting Implementation. The `lead` agent 
 **Trigger:** `/implement-phase <n> <slug>`  
 **Output:** working code with tests, committed after the phase is done
 
-`lead` reads the phase's task list and delegates each task to `task-implementer` via the Task tool — one task per sub-agent invocation, passing the task description, acceptance criteria, `[type: ...]` tag, and relevant file pointers.
+`lead` reads the phase's task list. Before delegating the first task, it checks `feedback-log.md` for any "Risks for future phases" entries from earlier reviews that are relevant to this phase, and surfaces them to you as a brief heads-up — informational only, it doesn't pause or ask for confirmation. It then delegates each task to `task-implementer` via the Task tool — one task per sub-agent invocation, passing the task description, acceptance criteria, `[type: ...]` tag, and relevant file pointers.
 
 `task-implementer` chooses its path based on the tag:
 
@@ -171,17 +173,17 @@ Tasks marked `[parallel-with: X]` in the plan may be delegated simultaneously. A
 
 `lead` compiles a phase summary from each task-implementer's summary block and presents it to you before declaring the phase ready for review.
 
-`lead` then commits the completed phase automatically (`feat(<slug>): phase <n> complete`). The reviewer uses this commit as its diff baseline.
+`lead` then commits the completed phase automatically (`feat(<slug>): phase <n> complete`). The reviewer diffs this branch against its fork point — see [Stage 3](#stage-3--feedback) — so this commit must exist before review runs.
 
 ---
 
 ### Stage 3 — Feedback
 
-**Agent:** `lead` (delegates to `phase-reviewer` → `issue-resolver` per blocking issue → `doc-updater`)  
+**Agent:** `lead` (delegates to `phase-reviewer` → `issue-resolver` per blocking/non-blocking issue → `doc-updater`)  
 **Trigger:** `/review-phase <n> <slug>`  
 **Output:** fixed code + updated docs + a new entry in `feedback-log.md`
 
-`phase-reviewer` inspects the actual git diff and test results for the phase. It reports in order:
+`phase-reviewer` diffs the phase branch against its fork point (`git merge-base` against the base it branched from, not against `main` or the previous commit) and checks test results. It reports in order:
 
 1. **Testing compliance** — did TDD tasks produce tests? Did smoke tasks run a check?
 2. **Blocking issues** — each with affected file(s) and a one-sentence reason it must be resolved before the next phase starts
@@ -189,9 +191,9 @@ Tasks marked `[parallel-with: X]` in the plan may be delegated simultaneously. A
 4. **Risks for future phases** — architecture drift, scope creep, concerns about upcoming phases
 5. **Suggested doc edits** — concrete, targeted changes to the affected docs
 
-`lead` presents the full report and asks you to confirm which items to resolve. For each confirmed item — whether blocking, non-blocking, or a future-phase risk — `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on.
+`lead` presents the full report and asks you to confirm which blocking and non-blocking issues to resolve. For each confirmed issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on. **"Risks for future phases" are never delegated to `issue-resolver`** — they're speculative concerns about work that hasn't happened yet, not bugs to fix. They're recorded in `feedback-log.md` instead.
 
-Once all confirmed items are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering both the original findings and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
+Once all confirmed issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering the original findings (including the logged risks) and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
 
 When all phases are complete, merge the feature branch to main yourself.
 
@@ -203,20 +205,23 @@ Repeat **Implementation → Feedback** for each phase until the plan is complete
 
 **Trigger:** `/autorun <slug>`
 
-If you trust the plan and want to skip the per-phase checkpoints, `/autorun` runs the entire Implementation → Feedback cycle for every phase in one go. `lead` iterates through all phases in order; for each phase it:
+If you trust the plan and want to skip the within-phase confirmations, `/autorun` runs the entire Implementation → Feedback cycle for every phase with a single checkpoint between phases. `lead` iterates through all phases in order; for each phase it:
 
 1. Creates the `feature/<slug>-phase-N` branch
-2. Delegates all tasks to `task-implementer` (same TDD / Smoke rules apply)
-3. Commits the completed phase
-4. Delegates review to `phase-reviewer`
-5. Resolves **all** issues and risks (blocking, non-blocking, and future-phase risks) via `issue-resolver` (sequentially, no confirmation)
-6. Delegates doc updates to `doc-updater`
-7. Commits fixes and doc updates
-8. Reports a per-phase progress summary, then moves to the next phase
+2. Checks `feedback-log.md` for relevant open risks and surfaces them as a heads-up (informational only)
+3. Delegates all tasks to `task-implementer` (same TDD / Smoke rules apply)
+4. Commits the completed phase
+5. Delegates review to `phase-reviewer` (diffed against the phase branch's fork point)
+6. Resolves **all** blocking and non-blocking issues via `issue-resolver` (sequentially, no confirmation). Risks for future phases are not delegated — they're logged in `feedback-log.md` by `doc-updater` instead.
+7. Delegates doc updates to `doc-updater`
+8. Commits fixes and doc updates
+9. Reports a per-phase progress summary
+10. **Pauses and asks you to confirm before starting the next phase** — this is the one checkpoint in an otherwise hands-off run, so a multi-phase run never disappears from view entirely.
 
 The only times `lead` stops and waits for you are:
 - A `task-implementer` reports **FAIL** — it cannot proceed until you decide whether to fix, skip, or adjust the task.
-- An `issue-resolver` reports **FAIL** — it cannot proceed until you decide how to handle the unresolved blocker.
+- An `issue-resolver` reports **FAIL** — it cannot proceed until you decide how to handle the unresolved issue.
+- The end-of-phase checkpoint, before each new phase begins.
 
 When all phases are complete, `lead` reports a full run summary and reminds you to merge to main.
 
@@ -231,8 +236,8 @@ Use `/implement-phase` and `/review-phase` individually when you want to inspect
 | `planner` | primary | Asks questions, writes initial docs | edit: allow · bash: deny · webfetch: ask |
 | `lead` | primary | Orchestrates, delegates, summarizes | edit/bash: ask · task: whitelisted 4 subagents only |
 | `task-implementer` | subagent | Implements one planned task (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
-| `phase-reviewer` | subagent | Read-only review, classifies blocking/non-blocking issues, compliance check | edit: deny · bash: read-only git + test commands only |
-| `issue-resolver` | subagent | Fixes one issue or risk found by reviewer — blocking, non-blocking, or future-phase risk (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
+| `phase-reviewer` | subagent | Read-only review, diffs against branch fork point, classifies blocking/non-blocking issues, compliance check | edit: deny · bash: read-only git + test commands only |
+| `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks | edit/bash/webfetch: allow · task: deny |
 | `doc-updater` | subagent | Applies approved doc edits after issues are resolved | edit: allow (docs only) · bash: deny |
 
 `lead` is locked to its four named subagents — it cannot invoke any other subagent. Neither `task-implementer` nor `issue-resolver` can spawn further subagents, preventing unbounded delegation chains.
@@ -398,7 +403,7 @@ Deviations: none
 /review-phase 1 todo-app
 ```
 
-`lead` delegates to `phase-reviewer`, which inspects the git diff and test results and reports:
+`lead` delegates to `phase-reviewer`, which diffs the phase branch against its fork point and checks test results, then reports:
 
 ```
 Testing compliance:
@@ -425,13 +430,13 @@ Suggested doc edits:
 
 `lead` presents this and asks:
 
-> There are 3 items to resolve: 1 blocking issue, 1 non-blocking finding, and 1 future-phase risk. Which would you like to address now?
+> There are 2 issues to resolve: 1 blocking, 1 non-blocking. (The future-phase risk is speculative and will just be logged.) Which would you like to address now?
 
 ```
-Resolve all of them.
+Resolve both.
 ```
 
-`lead` delegates to `issue-resolver` for each item, one at a time. First the blocking issue — `issue-resolver` applies the TDD path, writes a failing test asserting 204, fixes the route handler, runs pytest green:
+`lead` delegates to `issue-resolver` for each, one at a time. First the blocking issue — `issue-resolver` applies the TDD path, writes a failing test asserting 204, fixes the route handler, runs pytest green:
 
 ```
 Approach:       TDD
@@ -443,20 +448,29 @@ Deviations:     none
 Residual risks: none
 ```
 
-`lead` reports the resolution and asks:
+`lead` reports the resolution, then resolves the non-blocking finding the same way, and asks:
 
-> Blocking issue resolved. Apply the doc updates?
+> Both issues resolved. Apply the doc updates?
 
 ```
 Yes, apply them.
 ```
 
-`doc-updater` makes the targeted edits and appends a single dated entry to `feedback-log.md` covering both the original findings and the fix applied.
+`doc-updater` makes the targeted edits and appends a single dated entry to `feedback-log.md` covering the original findings (including the future-phase risk, which stays logged rather than fixed) and the two resolutions applied.
 
 ### Step 5 — Continue
 
 ```
 /implement-phase 2 todo-app
+```
+
+Before delegating Phase 2's first task, `lead` checks `feedback-log.md` and notices the `created_at` risk logged during Phase 1's review:
+
+> Heads-up: Phase 1's review flagged a risk that `created_at` was missing from the Todo response schema and may cause a breaking change later. `implementation-plan.md` already has a task for it in this phase — proceeding.
+
+This is informational only — `lead` doesn't pause for confirmation, it just continues into the phase's tasks.
+
+```
 /review-phase 2 todo-app
 /implement-phase 3 todo-app
 ...
@@ -489,9 +503,11 @@ opencode plugin @tarquinen/opencode-dcp@latest --global
 
 **Tagging is the planner's job, not the implementer's.** The `task-implementer` has a classification fallback, but it's less reliable than an explicit tag. Push back on the planner if it produces tasks without tags.
 
-**Blocking vs non-blocking is the reviewer's call, not yours.** The `phase-reviewer` classifies issues and risks before you see them. You decide which items to confirm for resolution — but you don't need to triage the raw list yourself.
+**Blocking vs non-blocking is the reviewer's call, not yours.** The `phase-reviewer` classifies issues before you see them. You decide which blocking and non-blocking issues to confirm for resolution — but you don't need to triage the raw list yourself. "Risks for future phases" are a separate category that's never delegated for fixing — they're speculative concerns, not bugs, so they just get logged.
 
-**Issue resolution is always sequential.** `issue-resolver` runs one fix at a time. If you have three items to resolve, expect three resolution cycles before the doc update. This is intentional — each fix may affect the next.
+**Issue resolution is always sequential.** `issue-resolver` runs one fix at a time. If you have three issues to resolve, expect three resolution cycles before the doc update. This is intentional — each fix may affect the next.
+
+**Logged risks resurface automatically, but only as a heads-up.** At the start of each phase, `lead` checks `feedback-log.md` for relevant open risks and mentions them before delegating tasks. It won't act on them itself — if a risk needs real work, add it as a tagged task in `implementation-plan.md` (the reviewer's "suggested doc edits" often do this for you).
 
 **Use `@explore` or `@scout` for quick lookups.** If you need to check something in the codebase during Implementation without spinning up a `task-implementer`, the built-in `@explore` and `@scout` subagents are available and lighter-weight.
 

@@ -5,11 +5,11 @@ This project uses a 3-stage AI-driven workflow on top of OpenCode.
 ## Stages
 1. **Planning** — `/plan <idea>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`. Commit the docs manually before starting Implementation.
 2. **Implementation** — `/implement-phase <n> <slug>` (uses the `lead` agent).
-   `lead` creates and switches to `feature/<slug>-phase-<n>`, MUST delegate each task to the `task-implementer` subagent via the Task tool — one task at a time (unless tagged [parallel-with]) — rather than editing files itself, then commits the completed phase.
+   `lead` creates and switches to `feature/<slug>-phase-<n>`, checks `feedback-log.md` for any open risks relevant to this phase and surfaces them as a heads-up, MUST delegate each task to the `task-implementer` subagent via the Task tool — one task at a time (unless tagged [parallel-with]) — rather than editing files itself, then commits the completed phase.
 3. **Feedback** — `/review-phase <n> <slug>` (uses the `lead` agent).
-   `lead` delegates the review to `phase-reviewer`, presents findings to the user, delegates all confirmed issues and risks (blocking, non-blocking, and future-phase risks) to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. Merging the feature branch to main is the user's responsibility.
+   `lead` delegates the review to `phase-reviewer`, presents findings to the user, delegates confirmed blocking and non-blocking issues to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. "Risks for future phases" are never delegated for fixing — they are speculative, so they're only recorded in `feedback-log.md`. Merging the feature branch to main is the user's responsibility.
 
-**Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases without pausing for confirmation. `lead` stops only when a subagent reports FAIL and waits for user direction.
+**Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL.
 
 ## Context hygiene rule
 Any agent doing actual file edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session

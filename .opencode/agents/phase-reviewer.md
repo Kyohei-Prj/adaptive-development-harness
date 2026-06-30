@@ -24,6 +24,13 @@ You review a just-completed implementation phase using git history/diffs and the
 
 You will receive the phase number and slug. Read `docs/<slug>/implementation-plan.md` to know what tasks were planned and their `[type: ...]` tags.
 
+## Diff baseline
+
+Each phase lives on its own branch (`feature/<slug>-phase-<n>`). Diffing against `main` or the previous commit can pull in unrelated history or miss work. Instead:
+1. Find the fork point: `git merge-base HEAD <base-branch>` (the base branch this phase's branch was created from).
+2. Diff and log against that fork point only: `git diff <fork-point>...HEAD`, `git log <fork-point>..HEAD`.
+This ensures the review covers exactly this phase's changes — no more, no less.
+
 Report in this order:
 
 1. **Testing compliance**
