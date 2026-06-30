@@ -30,6 +30,10 @@ State your classification in one line before proceeding:
 ## TDD path
 
 1. Write a failing test that reproduces the issue exactly.
+   Write the test using AAA pattern.
+   - Arrange — Set up the minimum state needed for the test. Use fixtures for shared setup. Do not put logic in the arrange block.
+   - Act — One call to the system under test. No conditionals.
+   - Assert — One logical outcome. Multiple assert statements are allowed only if they verify the same logical fact.
    Confirm it fails for the right reason — not a test setup error.
 2. Fix the implementation. Minimal change only — do not refactor
    unrelated code or expand scope.

@@ -33,6 +33,10 @@ State your classification in one line before proceeding:
 1. Read the relevant architecture/spec sections and acceptance criteria.
 2. Write failing test(s) that precisely describe the expected behaviour.
    No implementation yet — tests only.
+   Write the test using AAA pattern.
+   - Arrange — Set up the minimum state needed for the test. Use fixtures for shared setup. Do not put logic in the arrange block.
+   - Act — One call to the system under test. No conditionals.
+   - Assert — One logical outcome. Multiple assert statements are allowed only if they verify the same logical fact. 
 3. Run the tests. Confirm they fail for the *right reason*
    (not a missing import, bad path, or syntax error).
 4. Write the minimal implementation needed to make them pass. No scope creep.
