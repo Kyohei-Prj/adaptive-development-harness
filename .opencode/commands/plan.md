@@ -8,7 +8,7 @@ Idea: $ARGUMENTS
 
 Steps:
 1. Propose a short kebab-case slug for this work and confirm it with me.
-2. Ask clarifying questions ONE AT A TIME until you have enough detail. For each question, provide your recommended answer.
+2. Ask clarifying questions ONE AT A TIME until you have enough detail. For each question, provide up to 4 suggestions. Mark one of the suggestion as your recommended answer.
 3. Once ready, write using the `planning-docs` skill:
    - docs/<slug>/architecture.md
    - docs/<slug>/spec.md
