@@ -13,6 +13,9 @@ You will receive: a description of the issue, the affected file(s),
 the relevant acceptance criteria from the spec, and pointers to the
 phase's architecture section.
 
+If you're unsure about naming, module shape, error handling, or style
+conventions for this project, pull the `coding-standards` skill.
+
 ## Step 0 — Classify
 
 Classify the issue before acting:

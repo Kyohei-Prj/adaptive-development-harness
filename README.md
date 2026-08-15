@@ -1,6 +1,12 @@
 # AI-Driven Development Workflow
 
-A lightweight, three-stage workflow built on top of [OpenCode](https://opencode.ai/docs) that takes an idea from concept to working code. A human and AI agent collaborate through **Planning → Implementation → Feedback**, with context isolation enforced through sub-agent delegation and a structured document trail committed alongside the code.
+A lightweight, four-stage workflow built on top of [OpenCode](https://opencode.ai/docs) that takes an idea from concept to working code. A human and AI agent collaborate through **Grill → Planning → Implementation → Feedback**, with context isolation enforced through sub-agent delegation and a structured document trail committed alongside the code.
+
+The Grill stage, the vertical-slice phase structure, the reviewer's
+fresh-context + stronger-model setup, and the push/pull split on coding
+standards are adapted from Matt Pocock's public AI-coding workflow
+(alignment interviews before planning docs, tracer-bullet phases,
+never-review-in-the-implementer's-context). See [Tips & Conventions](#tips--conventions) for where each idea shows up and why.
 
 ---
 
@@ -30,10 +36,23 @@ User idea
     │
     ▼
 ┌─────────────────────────────────────────────┐
+│  Stage 0 · GRILL (optional)     (grill agent)│
+│                                             │
+│  Pure alignment interview, one question     │
+│  at a time. No docs, no code — just a       │
+│  shared design concept.                     │
+│                                             │
+│  Output: design concept summary (ephemeral) │
+└──────────────────┬──────────────────────────┘
+                   │  close session, start fresh
+                   ▼
+┌─────────────────────────────────────────────┐
 │  Stage 1 · PLANNING          (planner agent)│
 │                                             │
-│  One clarifying question at a time          │
-│  until requirements are clear.              │
+│  Transcribes the aligned design concept     │
+│  into docs. Phases are vertical slices —    │
+│  each crosses every layer to deliver one    │
+│  thin, reviewable, end-to-end behavior.     │
 │                                             │
 │  Output: architecture.md                    │
 │          spec.md                            │
@@ -80,10 +99,14 @@ User idea
 
 **Key design principles:**
 
-- **Context hygiene** — the primary (lead) session never holds diffs. All file edits happen inside sub-agent child sessions. The lead only receives task summaries.
+- **Alignment before artifacts** — `grill` interviews you about the design with no doc-writing reward in sight, so it can't rush the interview to get to a deliverable. `planner` only starts once that alignment exists (or flags that it doesn't). Splitting these into separate agents/sessions is deliberate: an agent that can see the next step tends to shortcut the current one.
+- **Vertical slices over horizontal layers** — `implementation-plan.md` phases are structured to cross every layer (schema → service → API → UI) and produce something reviewable after each phase, not "all the schema, then all the API, then all the UI."
+- **Context hygiene / smart zone** — the primary (lead) session never holds diffs; all file edits happen inside sub-agent child sessions, and the lead only receives task summaries. More generally, keep any single session under ~100K tokens of practical use — start fresh between Grill/Plan/Implement rather than letting one session run the whole feature. See `AGENTS.md`'s "Smart zone / dumb zone" section.
+- **Reviewer runs dumber-proof** — `phase-reviewer` always runs in a fresh subagent context (never appended to the implementer's session) and can be pinned to a stronger model than the implementer, so review reasoning isn't capped by whatever context state the implementer left behind.
+- **Push vs pull standards** — coding standards are pulled on demand by `task-implementer`/`issue-resolver` (loaded only if they're uncertain) but pushed inline into `phase-reviewer` (always enforced, since the reviewer is the one gate that must not skip them).
 - **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
-- **Document-first** — architecture, spec, and implementation plan are the source of truth throughout. They evolve via the Feedback stage, never silently.
-- **Minimal footprint** — 5 agent files, 3 command files, 1 skill. No plugins, no MCP servers, no external services.
+- **Document-first, but not permanent** — architecture, spec, and implementation plan are the source of truth during a unit of work. They evolve via the Feedback stage, never silently — and once a slug's phases are all merged, consider archiving `docs/<slug>/` rather than leaving it live to go stale and mislead a future session.
+- **Minimal footprint** — 7 agent files, 4 command files, 3 skills. No plugins, no MCP servers required beyond what you already had.
 
 ---
 
@@ -102,6 +125,7 @@ your-project/
 ├── AGENTS.md                            # Shared workflow rules, inherited by all agents
 ├── .opencode/
 │   ├── agents/
+│   │   ├── grill.md                     # Primary — Grill (alignment) stage
 │   │   ├── planner.md                   # Primary — Planning stage
 │   │   ├── lead.md                      # Primary — Implementation & Feedback
 │   │   ├── task-implementer.md          # Subagent — executes one planned coding task
@@ -109,14 +133,20 @@ your-project/
 │   │   ├── issue-resolver.md            # Subagent — fixes one blocking or non-blocking issue
 │   │   └── doc-updater.md               # Subagent — applies approved doc edits
 │   ├── commands/
-│   │   ├── plan.md                      # /plan <idea>
+│   │   ├── grill.md                     # /grill <idea>
+│   │   ├── plan.md                      # /plan <idea or grill summary>
 │   │   ├── implement-phase.md           # /implement-phase <n> <slug>
 │   │   └── review-phase.md              # /review-phase <n> <slug>
 │   └── skills/
-│       └── planning-docs/
-│           └── SKILL.md                 # Doc templates + task type tag rules
+│       ├── planning-docs/
+│       │   └── SKILL.md                 # Doc templates + task type tag rules
+│       ├── vertical-slicing/
+│       │   └── SKILL.md                 # Tracer-bullet phase design, pulled by planner
+│       └── coding-standards/
+│           └── SKILL.md                 # Project conventions — pulled by implementers, pushed into reviewer
 └── docs/
     ├── _templates/                      # Source templates (optional reference copies)
+    ├── _archive/                        # Optional — merged slugs' docs, moved here to avoid stale-doc drift
     └── <slug>/                          # One folder per feature/fix/project
         ├── architecture.md
         ├── spec.md
@@ -233,14 +263,15 @@ Use `/implement-phase` and `/review-phase` individually when you want to inspect
 
 | Agent | Mode | Role | Permissions |
 |---|---|---|---|
-| `planner` | primary | Asks questions, writes initial docs | edit: allow · bash: deny · webfetch: ask |
+| `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask |
+| `planner` | primary | Transcribes an aligned design concept into docs, structured as vertical slices | edit: allow · bash: deny · webfetch: allow |
 | `lead` | primary | Orchestrates, delegates, summarizes | edit/bash: ask · task: whitelisted 4 subagents only |
-| `task-implementer` | subagent | Implements one planned task (TDD or Smoke) | edit/bash/webfetch: allow · task: deny |
-| `phase-reviewer` | subagent | Read-only review, diffs against branch fork point, classifies blocking/non-blocking issues, compliance check | edit: deny · bash: read-only git + test commands only |
+| `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure | edit/bash/webfetch: allow · task: deny |
+| `phase-reviewer` | subagent | Read-only review, diffs against branch fork point, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model | edit: deny · bash: read-only git + test commands only |
 | `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks | edit/bash/webfetch: allow · task: deny |
 | `doc-updater` | subagent | Applies approved doc edits after issues are resolved | edit: allow (docs only) · bash: deny |
 
-`lead` is locked to its four named subagents — it cannot invoke any other subagent. Neither `task-implementer` nor `issue-resolver` can spawn further subagents, preventing unbounded delegation chains.
+`lead` is locked to its four named subagents — it cannot invoke any other subagent. Neither `task-implementer` nor `issue-resolver` can spawn further subagents, preventing unbounded delegation chains. `grill` and `planner` are separate primary agents used in separate sessions — closing one before opening the next is what keeps each session's context small and keeps `grill` from rushing to a deliverable.
 
 ---
 
@@ -248,7 +279,8 @@ Use `/implement-phase` and `/review-phase` individually when you want to inspect
 
 | Command | Agent invoked | Arguments | Purpose |
 |---|---|---|---|
-| `/plan <idea>` | `planner` | Free-text headline | Start a Planning session |
+| `/grill <idea>` | `grill` | Free-text idea | Alignment interview before any docs exist (optional, recommended for non-trivial work) |
+| `/plan <idea or grill summary>` | `planner` | Free-text headline or pasted design-concept summary | Start a Planning session |
 | `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks |
 | `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs |
 | `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically |
@@ -324,6 +356,16 @@ opencode
 ```
 
 Copy the agent, command, and skill files into `.opencode/` and `AGENTS.md` into the project root as described in [Setup](#setup).
+
+### Step 1.5 (optional) — Grill first
+
+For a small app like this, planning questions alone are probably enough. For something with more design ambiguity, you'd run:
+
+```
+/grill ToDo web app — FastAPI backend, Next.js + TailwindCSS frontend
+```
+
+and go through the alignment interview, then close that session and paste the resulting design-concept summary into `/plan` below. The rest of this walkthrough skips straight to `/plan` since the example is simple enough not to need it.
 
 ### Step 2 — Start planning
 
@@ -494,6 +536,12 @@ opencode plugin @tarquinen/opencode-dcp@latest --global
 ---
 
 ## Tips & Conventions
+
+**Run `/grill` before `/plan` for anything with real design ambiguity.** For a one-line bug fix or trivial task, skip straight to `/plan` — the planner will just ask a question or two directly. For anything where you're not sure yet what "done" looks like, grill first. Close the grill session before opening `/plan`; don't try to plan inside the same session.
+
+**Consider disabling `compaction.auto` in `opencode.json`, or treating it as a fallback only.** The default config in this repo has it on. Pocock's workflow deliberately prefers starting a fresh session (deterministic, empty state) over auto-summarizing a long one (lossy, less predictable) — closing sessions between stages already gets you most of this. If you want to lean further into that, you can disable it and rely entirely on stage boundaries for context resets, but it's a genuine trade-off (auto-compaction is a decent safety net for a session that ran long unintentionally) — this repo doesn't force either choice.
+
+**Pin `phase-reviewer` to your strongest available model** (`model:` field in its frontmatter) if your provider setup has a cost/capability tier, and leave `task-implementer`/`issue-resolver` on your faster default. Verify it's actually taking effect — some OpenCode versions have had subagents-via-Task inherit the parent's model instead of their own; a quick `opencode agent list` or a deliberately-wrong-answer test will confirm.
 
 **Keep `/plan` arguments to a headline.** One line sets the topic; the planner's questions fill in the rest. Long arguments with special characters can confuse the command parser.
 
