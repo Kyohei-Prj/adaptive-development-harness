@@ -3,7 +3,17 @@ description: Fixes one specific blocking or non-blocking issue identified by pha
 mode: subagent
 permission:
   edit: allow
-  bash: allow
+  bash:
+    "*": allow
+    "git push --force*": deny
+    "git push -f*": deny
+    "git push origin +*": deny
+    "rm -rf*": deny
+    "rm -fr*": deny
+    "git reset --hard*": deny
+    "git checkout -- .*": deny
+    "git checkout --force*": deny
+    "git clean -f*": deny
   webfetch: allow
   task: deny
 ---
@@ -12,6 +22,14 @@ You fix ONE specific blocking or non-blocking issue identified by the phase-revi
 You will receive: a description of the issue, the affected file(s),
 the relevant acceptance criteria from the spec, and pointers to the
 phase's architecture section.
+
+If you're unsure about naming, module shape, error handling, or style
+conventions for this project, pull the `coding-standards` skill.
+
+Some destructive commands (force-push, `rm -rf`, `git reset --hard`,
+`git checkout -- .`, `git clean -f`) are hard-blocked for you regardless of
+how the issue is phrased. If a fix genuinely seems to require one of these,
+stop and report why instead of finding a workaround.
 
 ## Step 0 — Classify
 

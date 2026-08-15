@@ -7,6 +7,7 @@ docs/<slug>/architecture.md
 docs/<slug>/spec.md
 docs/<slug>/implementation-plan.md
 docs/<slug>/feedback-log.md
+docs/<slug>/phase-branches.md   (created by `lead`, not `planner` — see below)
 
 `<slug>` = short kebab-case id agreed during Planning.
 
@@ -124,6 +125,9 @@ Note anything that must complete before later phases can start.
 **Issues found:**
 - ...
 
+**Deferred issues (confirmed but not fixed this round):**
+- ...
+
 **Risks for future phases:**
 - ...
 
@@ -131,3 +135,29 @@ Note anything that must complete before later phases can start.
 - architecture.md: ...
 - spec.md: ...
 - implementation-plan.md: ...
+
+---
+
+### phase-branches.md
+
+Not written by `planner` — `lead` creates this file's header the first
+time `/implement-phase` runs for a slug (Phase 1), and appends one row per
+phase after that. It exists so `phase-reviewer` never has to guess or infer
+a phase's diff baseline from branch-naming conventions — the actual base
+branch, captured at the moment each phase branch was created, is recorded
+here instead.
+
+```markdown
+# Phase Branches — <slug>
+
+| Phase | Branch | Base |
+|---|---|---|
+| 1 | feature/<slug>-phase-1 | main |
+| 2 | feature/<slug>-phase-2 | feature/<slug>-phase-1 |
+```
+
+"Base" is whatever branch was checked out immediately before `lead` ran
+`git checkout -b feature/<slug>-phase-<n>` — captured programmatically
+(`git branch --show-current` right before the checkout), never assumed
+from a naming pattern. This file is committed as part of each phase's
+commit, so it survives across sessions.

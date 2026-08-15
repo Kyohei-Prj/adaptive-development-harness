@@ -1,22 +1,82 @@
-# Workflow: Plan → Implement → Feedback
+# Workflow: Grill → Plan → Implement → Feedback
 
-This project uses a 3-stage AI-driven workflow on top of OpenCode.
+This project uses a 4-stage AI-driven workflow on top of OpenCode.
 
 ## Stages
-1. **Planning** — `/plan <idea>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`. Commit the docs manually before starting Implementation.
+0. **Grill (optional but recommended for anything non-trivial)** — `/grill <idea>` (uses the `grill` agent). Pure alignment interview, one question at a time, no docs written. Ends with a short design-concept summary. Close this session, then start a fresh one for Planning — don't run Plan inside the same session, and don't skip straight to `/plan` for anything with real design ambiguity.
+1. **Planning** — `/plan <idea or grill summary>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`. Phases in `implementation-plan.md` are structured as **vertical slices** (each one crosses every layer to deliver one thin, reviewable, end-to-end piece of behavior) — not horizontal layers like "all schema, then all API, then all UI". Commit the docs manually before starting Implementation.
 2. **Implementation** — `/implement-phase <n> <slug>` (uses the `lead` agent).
-   `lead` creates and switches to `feature/<slug>-phase-<n>`, checks `feedback-log.md` for any open risks relevant to this phase and surfaces them as a heads-up, MUST delegate each task to the `task-implementer` subagent via the Task tool — one task at a time (unless tagged [parallel-with]) — rather than editing files itself, then commits the completed phase.
+   `lead` captures the current branch as this phase's base, creates and switches to `feature/<slug>-phase-<n>`, and records the base in `docs/<slug>/phase-branches.md` (never inferred later — this is what makes review's diff baseline reliable). It checks `feedback-log.md` for any open risks or deferred issues relevant to this phase and surfaces them as a heads-up, then MUST delegate each task to the `task-implementer` subagent via the Task tool. Tasks tagged `[parallel-with: ...]` run in isolated git worktrees under `.worktrees/` (one branch per task, merged back sequentially, never in parallel) rather than sharing the main working tree — everything else runs sequentially. `lead` never edits files itself; it commits the completed phase once all tasks report done.
 3. **Feedback** — `/review-phase <n> <slug>` (uses the `lead` agent).
-   `lead` delegates the review to `phase-reviewer`, presents findings to the user, delegates confirmed blocking and non-blocking issues to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. "Risks for future phases" are never delegated for fixing — they are speculative, so they're only recorded in `feedback-log.md`. Merging the feature branch to main is the user's responsibility.
+   `lead` delegates the review to `phase-reviewer` (which reads `phase-branches.md` for the correct diff baseline rather than guessing), presents findings to the user, delegates confirmed blocking and non-blocking issues to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. "Risks for future phases" are speculative and are only ever logged. Issues the user declines to resolve now are **deferred, not dropped** — they're logged in `feedback-log.md` and resurface as a heads-up in a later phase the same way risks do. Merging the feature branch to main is the user's responsibility.
 
-**Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL.
+**Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed; anything skipped after a FAIL is logged as deferred, not dropped). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL or a parallel-task merge conflict occurs.
+
+**Before merging to main:** run `/finalize <slug>` — re-checks the whole feature branch as one unit (not phase-by-phase) to catch integration issues no single phase review would see.
+
+**After merging to main:** run `/archive <slug>` to move `docs/<slug>/` to `docs/_archive/<slug>/`, so stale planning docs don't mislead a future `/grill` or `/plan` session for unrelated work.
+
+**Periodically (not tied to any single slug):** run `/architecture-review [path]` — a whole-codebase scan for shallow-module sprawl and drift that accumulates gradually across many individually-fine phases. Per-phase review can't catch this; it's a separate, standalone pass.
 
 ## Context hygiene rule
 Any agent doing actual file edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session
 holds summaries, not diffs.
 
+## Parallel task isolation
+Tasks tagged `[parallel-with: ...]` in `implementation-plan.md` do NOT share
+the main working tree. `lead` gives each one its own git worktree under
+`.worktrees/<slug>-<task-id>` on its own branch, delegates to a separate
+`task-implementer` instance pointed at that directory, and merges each
+branch back into the phase branch sequentially once all tasks in the group
+finish — never in parallel, and never automatically past a merge conflict
+(that always stops and waits for the user). Add `.worktrees/` to your
+project's `.gitignore` if it isn't covered already; it's already excluded
+from `opencode.json`'s file watcher.
+
+## Destructive-command guardrails
+`task-implementer` and `issue-resolver` have broad edit/bash access because
+they need to run freely within a task, including during unattended
+`/autorun` runs — but a small denylist blocks the genuinely destructive
+commands outright regardless of how a task is phrased: force-push,
+`rm -rf`/`rm -fr`, `git reset --hard`, `git checkout -- .` /
+`git checkout --force`, and `git clean -f`. If a task or issue fix seems to
+genuinely need one of these, the agent is instructed to stop and report
+rather than find a workaround — that decision stays with you.
+
+## Smart zone / dumb zone
+LLM reasoning degrades well before the advertised context limit — treat
+~100K tokens as a practical ceiling for any single session, not the vendor's
+max. Watch your context usage (a token counter in the status line, or
+`opencode`'s own usage indicator) and start a fresh session rather than let
+a session run long:
+
+- Close the `grill` session before starting `/plan`. Close the planning
+  session before starting `/implement-phase`. Each subagent invocation via
+  Task already gets its own fresh context by construction — don't undermine
+  that by keeping one giant primary session open across an entire feature.
+- Prefer starting a new session over relying on auto-compaction/summarization
+  when a session gets long. A fresh session reading the committed docs is a
+  deterministic, repeatable starting point; a compacted summary is not, and
+  can quietly drop details that matter later. If `compaction.auto` is
+  enabled in `opencode.json`, treat it as a safety net for sessions that ran
+  longer than intended, not as a substitute for closing sessions between
+  stages.
+- This is also why `lead` is locked to delegating rather than editing files
+  itself: keeping the orchestrating session small is what makes multi-phase
+  runs (including `/autorun`) viable at all.
+
 ## Docs
-All planning docs for a unit of work live under `docs/<slug>/`. See the`planning-docs` skill for templates and task type tag rules.
+All planning docs for a unit of work live under `docs/<slug>/`. See the `planning-docs` skill for templates and task type tag rules.
+
+**After all phases for a slug are merged to main**, consider moving
+`docs/<slug>/` to `docs/_archive/<slug>/` (or deleting it) rather than
+leaving it live in the tree indefinitely. Planning docs drift from reality
+as code evolves after shipping; a future `/grill` or `/plan` session for
+unrelated work that stumbles on stale docs and treats them as current can
+get quietly misled by them. Closed GitHub/issue-tracker items with clear
+"done" status are a safer long-term reference than a live-looking markdown
+file. This is a judgment call, not an automated step — no agent in this
+workflow archives docs on its own.
 
 # Behavioral Guidelines
 

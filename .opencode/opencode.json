@@ -107,7 +107,8 @@
       "**/*.map",
       "**/*.lock",
       ".venv/**",
-      ".opencode/**"
+      ".opencode/**",
+      ".worktrees/**"
     ]
   },
   "compaction": {
