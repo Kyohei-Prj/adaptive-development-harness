@@ -25,6 +25,7 @@ never-review-in-the-implementer's-context). See [Tips & Conventions](#tips--conv
 - [Commands Reference](#commands-reference)
 - [Task Type System](#task-type-system)
 - [Document Templates](#document-templates)
+- [Shared Mechanics](#shared-mechanics)
 - [Full Worked Example](#full-worked-example)
 - [Tips & Conventions](#tips--conventions)
 - [Troubleshooting](#troubleshooting)
@@ -38,7 +39,7 @@ User idea
     │
     ▼
 ┌─────────────────────────────────────────────┐
-│  Stage 0 · GRILL (optional)     (grill agent)│
+│  Stage 0 · GRILL (optional)    (grill agent)│
 │                                             │
 │  Pure alignment interview, one question     │
 │  at a time. No docs, no code — just a       │
@@ -107,8 +108,9 @@ User idea
 - **Reviewer runs dumber-proof** — `phase-reviewer` always runs in a fresh subagent context (never appended to the implementer's session) and can be pinned to a stronger model than the implementer, so review reasoning isn't capped by whatever context state the implementer left behind.
 - **Push vs pull standards** — coding standards are pulled on demand by `task-implementer`/`issue-resolver` (loaded only if they're uncertain) but pushed inline into `phase-reviewer` (always enforced, since the reviewer is the one gate that must not skip them).
 - **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
+- **Mechanics live in one place** — phase-branch setup, worktree-isolated parallel execution, and issue-resolution delegation are the same underlying procedures whether triggered by `/implement-phase`, `/autorun`, or the headless `*-auto` commands. They're defined once in the `phase-lifecycle` skill and referenced everywhere, not copy-pasted per command — six near-identical copies is exactly the situation that lets one silently drift from the rest.
 - **Document-first, but not permanent** — architecture, spec, and implementation plan are the source of truth during a unit of work. They evolve via the Feedback stage, never silently — and once a slug's phases are all merged, consider archiving `docs/<slug>/` rather than leaving it live to go stale and mislead a future session.
-- **Minimal footprint** — 7 agent files, 4 command files, 3 skills. No plugins, no MCP servers required beyond what you already had.
+- **Minimal footprint, not minimal correctness** — 8 agent files, 10 command files, 4 skills, 1 script. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
 
 ---
 
@@ -141,7 +143,9 @@ your-project/
 │   │   ├── plan.md                      # /plan <idea or grill summary>
 │   │   ├── implement-phase.md           # /implement-phase <n> <slug>
 │   │   ├── review-phase.md              # /review-phase <n> <slug>
-│   │   ├── autorun.md                   # /autorun <slug>
+│   │   ├── autorun.md                   # /autorun <slug> (in-chat, one checkpoint per phase)
+│   │   ├── implement-phase-auto.md      # /implement-phase-auto <n> <slug> (headless — used by scripts/autorun.sh)
+│   │   ├── review-phase-auto.md         # /review-phase-auto <n> <slug> (headless — used by scripts/autorun.sh)
 │   │   ├── finalize.md                  # /finalize <slug>
 │   │   ├── archive.md                   # /archive <slug>
 │   │   └── architecture-review.md       # /architecture-review [path]
@@ -150,8 +154,12 @@ your-project/
 │       │   └── SKILL.md                 # Doc templates + task type tag rules
 │       ├── vertical-slicing/
 │       │   └── SKILL.md                 # Tracer-bullet phase design, pulled by planner
-│       └── coding-standards/
-│           └── SKILL.md                 # Project conventions — pulled by implementers, pushed into reviewer
+│       ├── coding-standards/
+│       │   └── SKILL.md                 # Project conventions — pulled by implementers, pushed into reviewer
+│       └── phase-lifecycle/
+│           └── SKILL.md                 # Phase-branch setup, worktree/parallel-task mechanics, issue-resolution delegation, status-trailer format — single source of truth pulled by all 6 phase-related commands
+├── scripts/
+│   └── autorun.sh                       # Fully hands-off driver: one `opencode run` process per phase, genuinely fresh context each time
 └── docs/
     ├── _templates/                      # Source templates (optional reference copies)
     ├── _archive/                        # Merged slugs' docs, moved here by /archive to avoid stale-doc drift
@@ -254,9 +262,11 @@ Repeat **Implementation → Feedback** for each phase until the plan is complete
 
 ### Automated Full Run (optional)
 
-**Trigger:** `/autorun <slug>`
+There are two ways to automate the Implementation → Feedback loop across every phase, trading off differently between hands-off convenience and session-freshness discipline. Both build on everything above — same worktree isolation, same denylist, same deferred-issue/risk logging.
 
-If you trust the plan and want to skip the within-phase confirmations, `/autorun` runs the entire Implementation → Feedback cycle for every phase with a single checkpoint between phases. `lead` iterates through all phases in order; for each phase it:
+#### Option A — `/autorun <slug>` (in-chat, one checkpoint per phase)
+
+If you trust the plan and want to skip the within-phase confirmations but still want to stay roughly in the loop, `/autorun` runs the entire Implementation → Feedback cycle for every phase inside **one continuous `lead` session**, with a single checkpoint between phases. `lead` iterates through all phases in order; for each phase it:
 
 1. Captures the current branch as this phase's base and records it in `phase-branches.md`, then creates the `feature/<slug>-phase-N` branch
 2. Checks `feedback-log.md` for relevant open risks and deferred issues, and surfaces them as a heads-up (informational only)
@@ -275,9 +285,38 @@ The only times `lead` stops and waits for you are:
 - A parallel-task merge conflict occurs — it will not attempt to resolve this automatically.
 - The end-of-phase checkpoint, before each new phase begins.
 
-When all phases are complete, `lead` reports a full run summary and reminds you to merge to main.
+When all phases are complete, `lead` reports a full run summary and reminds you to run `/finalize <slug>` before merging, and `/archive <slug>` after.
 
-Use `/implement-phase` and `/review-phase` individually when you want to inspect or adjust things between phases; use `/autorun` when you want to let the agent go end-to-end.
+**The trade-off:** because everything happens in one `lead` session, that session's own context accumulates a summary per phase for the life of the run. Fine for a short plan; on a long one (8+ phases), the orchestrating session itself can drift toward the smart zone ceiling even though it never holds full diffs — see [Smart zone / dumb zone](#tips--conventions) below.
+
+#### Option B — `scripts/autorun.sh <slug>` (headless, genuinely fresh session per phase)
+
+For long plans, or for true unattended automation (CI, a cron job, "kick it off before you leave for the day"), use the driver script instead:
+
+```bash
+scripts/autorun.sh <slug>
+```
+
+This isn't an in-chat command — it's a bash script that calls the `opencode` CLI's non-interactive mode (`opencode run --agent lead "<command>"`) once per phase-step. Each call is its own **process**, with its own fresh context — the same property you'd get from manually closing a session and starting another, except nothing here has to remember to do it. Concretely, for each phase N it runs:
+
+```bash
+opencode run --agent lead "/implement-phase-auto N <slug>"
+opencode run --agent lead "/review-phase-auto N <slug>"
+```
+
+and after every phase, calls `/finalize <slug>` once at the end. `implement-phase-auto` and `review-phase-auto` are non-interactive twins of `implement-phase`/`review-phase` — same steps, same worktree/denylist/deferred-issue behavior, but never pausing for confirmation, and always ending their response with a machine-readable trailer the script parses:
+
+```
+AUTORUN_STATUS: OK
+AUTORUN_STATUS: FAIL: <reason>
+AUTORUN_STATUS: NEEDS_HUMAN: <reason>
+```
+
+The script stops immediately (non-zero exit) on anything other than `OK` — including a missing trailer, which it treats as `NEEDS_HUMAN` rather than assuming success. Everything is logged to `docs/<slug>/autorun.log`, since there's no live chat to watch. On a stop, review the log, fix whatever's wrong (manually, or by resuming interactively with `/implement-phase`/`/review-phase` for that specific phase), then re-run — completed phases won't be redone since their branches and `phase-branches.md` rows already exist, though the current script doesn't auto-skip them, so either edit the phase list at the top of a re-run or invoke the remaining phases' commands by hand.
+
+**Requirements:** the `opencode` CLI on `PATH`, with headless auth already configured (`opencode auth login` or the relevant provider environment variables). Smoke-test with `opencode run --agent lead "echo hi"` before a real run — some `opencode` versions/platforms have had `run` require a pre-existing session rather than creating one automatically; the script's header comment has a link to the relevant issue if you hit this.
+
+**Use `/implement-phase`/`/review-phase` individually** when you want to inspect or adjust things between phases; **use `/autorun`** for a short plan where you want to stay roughly in the loop; **use `scripts/autorun.sh`** for a long plan or genuinely unattended automation where fresh-session discipline matters more than live visibility.
 
 ---
 
@@ -316,12 +355,16 @@ Three commands sit outside the per-phase Implementation ↔ Feedback loop — on
 |---|---|---|---|
 | `/grill <idea>` | `grill` | Free-text idea | Alignment interview before any docs exist (optional, recommended for non-trivial work) |
 | `/plan <idea or grill summary>` | `planner` | Free-text headline or pasted design-concept summary | Start a Planning session |
-| `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks |
-| `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs |
-| `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically |
-| `/finalize <slug>` | `lead` | Slug | Whole-branch check across all phases together, before merging to main |
+| `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks (interactive) |
+| `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs (interactive) |
+| `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically, one checkpoint per phase, single continuous session |
+| `/implement-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/implement-phase` — no confirmation, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
+| `/review-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/review-phase` — auto-resolves all issues, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
+| `/finalize <slug>` | `lead` | Slug | Whole-branch check across all phases together, before merging to main. Non-interactive; usable standalone or headlessly. |
 | `/archive <slug>` | `lead` | Slug | Move a merged slug's docs to `docs/_archive/`, after merging to main |
 | `/architecture-review [path]` | `lead` | Optional path | Whole-codebase (or scoped) architecture scan, run periodically, not tied to a slug |
+
+`scripts/autorun.sh <slug>` (a bash script, not an in-chat command) drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` processes — one process per phase, so each phase's orchestrating session is genuinely fresh rather than accumulated across the whole run. See [Automated Full Run](#automated-full-run-optional).
 
 ---
 
@@ -383,6 +426,12 @@ All templates are embedded in `.opencode/skills/planning-docs/SKILL.md` and are 
 
 ---
 
+## Shared Mechanics
+
+`implement-phase`, `implement-phase-auto`, `autorun`, `review-phase`, `review-phase-auto`, and `finalize` all perform the same three underlying procedures — phase-branch setup, worktree-isolated parallel task execution, and issue-resolution delegation — differing only in *policy* (ask first vs. auto-resolve, checkpoint vs. no checkpoint) and, for the three headless commands, the `AUTORUN_STATUS` trailer. Rather than each command file describing these mechanics independently (which is how earlier drafts of this repo worked, and which had already started to drift — one copy quietly lost part of the conflict-handling instructions during an edit that touched only its siblings), they're defined once in `.opencode/skills/phase-lifecycle/SKILL.md` and referenced by name. If you need to change how worktrees are created, how issues get delegated, or the status-trailer format, edit that skill file — not the six command files that reference it.
+
+---
+
 ## Full Worked Example
 
 **Scenario:** Build a simple ToDo web app — Python/FastAPI backend, TypeScript/TailwindCSS/Next.js frontend, SQLite, runs locally.
@@ -395,7 +444,7 @@ git init
 opencode
 ```
 
-Copy the agent, command, and skill files into `.opencode/` and `AGENTS.md` into the project root as described in [Setup](#setup).
+Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first).
 
 ### Step 1.5 (optional) — Grill first
 
@@ -583,6 +632,8 @@ opencode plugin @tarquinen/opencode-dcp@latest --global
 
 **Pin `phase-reviewer` to your strongest available model** (`model:` field in its frontmatter) if your provider setup has a cost/capability tier, and leave `task-implementer`/`issue-resolver` on your faster default. Verify it's actually taking effect — some OpenCode versions have had subagents-via-Task inherit the parent's model instead of their own; a quick `opencode agent list` or a deliberately-wrong-answer test will confirm.
 
+**Prefer `scripts/autorun.sh` over `/autorun` for long plans.** `/autorun` runs every phase inside one continuous `lead` session — hands-off within a phase, but that session's own context still accumulates a summary per phase for the life of the run, which can drift toward the smart zone ceiling on an 8+ phase plan. `scripts/autorun.sh` gets a genuinely fresh session per phase by using `opencode run` process boundaries instead — see [Automated Full Run](#automated-full-run-optional). Smoke-test `opencode run --agent lead "echo hi"` once before trusting it with a real multi-phase run.
+
 **Keep `/plan` arguments to a headline.** One line sets the topic; the planner's questions fill in the rest. Long arguments with special characters can confuse the command parser.
 
 **Commit once manually:** after Planning (the four docs). Everything after that — branching, phase commits, and review commits — is handled by `lead` automatically. Your only other git responsibility is merging the feature branch to main when all phases are done.
@@ -648,3 +699,14 @@ Run `/review-phase <last-completed-n> <slug>` even if you skipped it earlier. Th
 **`/plan` or `/grill` for a new slug pulls in stale context from an old, related feature**  
 Check whether that old slug's docs are still sitting live under `docs/<old-slug>/`. If it's already merged, run `/archive <old-slug>` — a live-looking doc for finished work is exactly the stale-context trap archiving exists to prevent.
 
+**`scripts/autorun.sh` exits immediately with "Error: no 'opencode' CLI" or a connection/auth error**  
+This is a tooling failure, not an `AUTORUN_STATUS: FAIL` from the agent — `opencode` itself couldn't run. Confirm it's on `PATH` and headless auth is configured: `opencode run --agent lead "echo hi"` should work standalone before you trust the script with a real run.
+
+**`scripts/autorun.sh` stops with "no AUTORUN_STATUS trailer found"**  
+The script treats a missing trailer as `NEEDS_HUMAN` rather than assuming success — this is deliberate fail-closed behavior, not a bug. Check `docs/<slug>/autorun.log` for the full output of that step; either the command produced an unexpected response format (check for a recent edit to `implement-phase-auto.md`/`review-phase-auto.md`/`finalize.md` that dropped the trailer instructions) or something genuinely went sideways mid-response.
+
+**`scripts/autorun.sh` stopped partway through and I want to resume**  
+It doesn't auto-skip completed phases on a re-run. Either edit the `PHASES` list at the top of the loop to start from the phase that failed, or just resume interactively from that point with `/implement-phase`/`/review-phase` — completed phases' branches and `phase-branches.md` rows are already in place either way.
+
+**`opencode run` reports "Session not found" or similar, even for a trivial prompt**  
+Some `opencode` versions/platforms have had `run` require a pre-existing session rather than creating one automatically (there's a link to the relevant tracking issue in `scripts/autorun.sh`'s header comment). Check `opencode run --help` and `opencode session --help` for your installed version; if this affects you, the script needs a small change to create a session explicitly per phase before running the command against it.

@@ -38,6 +38,36 @@ Core rule: PREFER DELEGATION. Use the Task tool to send each unit of work to the
 - `doc-updater`      — applying approved doc edits
 - `architecture-reviewer` — whole-codebase architecture scans, independent of any phase (`/architecture-review`)
 
+## Non-interactive commands and the AUTORUN_STATUS trailer
+
+`implement-phase-auto`, `review-phase-auto`, and `finalize` are designed to
+also run headlessly via `opencode run` from `scripts/autorun.sh` (see that
+script's header comment for why: it gets a genuinely fresh session per
+phase by using process boundaries instead of one long-running
+conversation). Because there may be no human present to ask anything of,
+these three commands never pause for confirmation, and always end their
+response with a literal trailer line the script parses:
+
+```
+AUTORUN_STATUS: OK
+```
+or
+```
+AUTORUN_STATUS: FAIL: <one-line reason>
+```
+or
+```
+AUTORUN_STATUS: NEEDS_HUMAN: <one-line reason>
+```
+
+This line must be the actual last line of the response, exactly as shown,
+whenever one of those three commands is running — whether invoked
+interactively or headlessly, since there's no reliable way to tell which
+from inside the command. Producing it in an interactive session is
+harmless (the human just ignores it); omitting it in a headless run makes
+the script fail closed rather than silently assuming success, which is the
+whole point.
+
 This keeps your own context small. Only edit files yourself as a last resort for trivial things, and ask first.
 
 Before delegating the first task of any phase, read `docs/<slug>/feedback-log.md` if it exists. If it contains any "Risks for future phases" or "Deferred issues" entries relevant to the phase about to start, surface them to the user as a brief one-line heads-up. This is informational only — never block on it, and never ask for confirmation before proceeding.
