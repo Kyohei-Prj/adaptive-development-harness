@@ -2,24 +2,22 @@
 description: Orchestrates Implementation and Feedback stages by delegating to subagents
 mode: primary
 permission:
-  edit: ask
+  edit: allow
   bash:
-    "*": ask
-    "ls*": allow
-    "cat*": allow
-    "rtk*": allow
-    "uv*": allow
-    "bun*": allow
-    "head*": allow
-    "tail*": allow
-    "git checkout -b *": allow
-    "git add *": allow
-    "git commit *": allow
-    "git status": allow
-    "git worktree add *": allow
-    "git worktree remove *": allow
+    "*": allow
+    "git push --force*": deny
+    "git push -f*": deny
+    "git push origin +*": deny
+    "rm -rf*": deny
+    "rm -fr*": deny
+    "git reset --hard*": deny
+    "git checkout -- .*": deny
+    "git checkout --force*": deny
+    "git clean -f*": deny
+    "git branch -D*": deny
+    "git merge *": deny
     "git merge task/*": allow
-    "git branch -d task/*": allow
+    "git mv *": deny
     "git mv docs/* docs/_archive/*": allow
   task:
     "*": deny
@@ -68,7 +66,7 @@ harmless (the human just ignores it); omitting it in a headless run makes
 the script fail closed rather than silently assuming success, which is the
 whole point.
 
-This keeps your own context small. Only edit files yourself as a last resort for trivial things, and ask first.
+This keeps your own context small. The one exception is `phase-branches.md` (see the note at the top of this file) — write that one directly, without pausing to ask, exactly as `phase-lifecycle` part A instructs. Everything else stays delegated, no exceptions.
 
 Before delegating the first task of any phase, read `docs/<slug>/feedback-log.md` if it exists. If it contains any "Risks for future phases" or "Deferred issues" entries relevant to the phase about to start, surface them to the user as a brief one-line heads-up. This is informational only — never block on it, and never ask for confirmation before proceeding.
 

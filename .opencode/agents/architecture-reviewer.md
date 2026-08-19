@@ -1,22 +1,23 @@
 ---
 description: Scans the whole codebase (not a single phase's diff) for shallow-module sprawl, dead code, and other architecture drift that accumulates gradually across many phases. Read-only.
 mode: subagent
-model: anthropic/claude-opus-4-8
 permission:
   edit: deny
   bash:
-    "*": ask
-    "ls*": allow
-    "cat*": allow
-    "find*": allow
-    "grep*": allow
-    "rg*": allow
-    "head*": allow
-    "tail*": allow
-    "wc*": allow
-    "git ls-files*": allow
-    "git log*": allow
-    "git status": allow
+    "*": allow
+    "git push --force*": deny
+    "git push -f*": deny
+    "git push origin +*": deny
+    "rm -rf*": deny
+    "rm -fr*": deny
+    "git reset --hard*": deny
+    "git checkout -- .*": deny
+    "git checkout --force*": deny
+    "git clean -f*": deny
+    "git branch -D*": deny
+    "git commit *": deny
+    "git add *": deny
+    "git push*": deny
 ---
 You scan the **entire current codebase** for architecture drift — not one
 phase's diff, not one feature's changes. `phase-reviewer` already checks

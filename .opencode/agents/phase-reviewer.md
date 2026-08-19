@@ -13,25 +13,23 @@ mode: subagent
 # subagents invoked via the Task tool sometimes inherit the parent (lead)
 # agent's model instead of honoring this field — verify with
 # `opencode agent list` / a test run that it's actually taking effect.
-model: anthropic/claude-opus-4-8
 permission:
   edit: deny
   bash:
-    "*": ask
-    "ls*": allow
-    "cat*": allow
-    "rtk*": allow
-    "uv*": allow
-    "head*": allow
-    "tail*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git status": allow
-    "git show*": allow
-    "npm test*": allow
-    "pytest*": allow
-    "bun*": allow
-    "bunx*": allow
+    "*": allow
+    "git push --force*": deny
+    "git push -f*": deny
+    "git push origin +*": deny
+    "rm -rf*": deny
+    "rm -fr*": deny
+    "git reset --hard*": deny
+    "git checkout -- .*": deny
+    "git checkout --force*": deny
+    "git clean -f*": deny
+    "git branch -D*": deny
+    "git commit *": deny
+    "git add *": deny
+    "git push*": deny
 ---
 You review a just-completed implementation phase using git history/diffs and the test suite — not just the plan on paper.
 

@@ -1,11 +1,6 @@
 ---
 description: "Implements a single, well-scoped coding task. Applies TDD for business logic and complex features; applies a smoke check for scaffolding and simple wiring. Task type is determined by the [type: tdd|smoke] tag on the task."
 mode: subagent
-# Optional: pin this to a faster/cheaper model than phase-reviewer's, since
-# implementation happens far more often than review (Pocock's Sonnet-for-
-# implement / Opus-for-review split). Left unset here to inherit your
-# default — uncomment and point at whatever your fast tier is, e.g.:
-# model: anthropic/claude-sonnet-4-6
 permission:
   edit: allow
   bash:
