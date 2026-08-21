@@ -1,18 +1,6 @@
 ---
 description: Reviews changes made in a completed phase, classifies issues as blocking or non-blocking, checks testing compliance, checks architecture (deep vs shallow modules), and surfaces risks and doc-update suggestions. Read-only.
 mode: subagent
-# Reviewer runs in its own fresh subagent context regardless (never appended
-# to the implementer's session) — that part of Pocock's "fresh-context
-# reviewer" principle is structurally guaranteed by the Task-tool delegation
-# model already. This model override adds the second half: give the
-# reviewer more reasoning budget than the implementer, since a reviewer
-# operating at the same capability as the thing it's reviewing tends to miss
-# what the implementer missed. Set this to the strongest model you have
-# configured; task-implementer/issue-resolver can stay on a faster/cheaper
-# one. NOTE: at time of writing there's an open OpenCode issue where
-# subagents invoked via the Task tool sometimes inherit the parent (lead)
-# agent's model instead of honoring this field — verify with
-# `opencode agent list` / a test run that it's actually taking effect.
 permission:
   edit: deny
   bash:

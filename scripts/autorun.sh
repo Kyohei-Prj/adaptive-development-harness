@@ -17,6 +17,10 @@
 # Requires:
 #   - the `opencode` CLI on PATH, with headless auth already configured
 #     (`opencode auth login`, or the relevant provider env vars set)
+#   - `jq` on PATH — required to correctly parse `opencode run --format
+#     json`'s event stream. See the note above run_step() for why this
+#     isn't optional: naive text-grepping the raw JSONL previously produced
+#     false-positive AND false-negative status reads.
 #   - docs/<slug>/implementation-plan.md already committed (i.e. Planning
 #     is done)
 #
@@ -31,6 +35,12 @@ set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <slug>" >&2
+  exit 2
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not found on PATH. Install it (e.g. 'apt install jq', 'brew install jq') before running this script." >&2
+  echo "jq is what lets this script correctly parse 'opencode run --format json' event-by-event, instead of text-grepping the raw JSONL — the latter previously matched tool-output payloads (like a skill file's own documentation text) instead of the agent's actual final report." >&2
   exit 2
 fi
 
@@ -61,6 +71,23 @@ fi
 
 echo "Found ${#PHASES[@]} phase(s): ${PHASES[*]}"
 
+# `opencode run --format json` emits one JSON object per line (JSONL), with
+# a `type` field: "text" (actual model output), "tool_use" (a tool call's
+# full input/output — e.g. a skill file's ENTIRE contents when the agent
+# reads it), "step_start"/"step_finish", and "error". Naively grepping the
+# raw JSONL for "AUTORUN_STATUS:" is unsafe: (1) a tool_use event's output
+# can itself contain that literal substring — e.g. the phase-lifecycle
+# skill documents the trailer format with a literal example block, and
+# grep can't tell "the skill describing the format" from "the agent's real
+# report"; (2) embedded newlines inside a JSON string are encoded as the
+# two literal characters \n, not real line breaks, so a naive grep can
+# match far past where a human would expect a "line" to end. Extracting
+# only `type=="text"` events' `.part.text` — and only the LAST one, i.e.
+# the model's actual final response — avoids both problems.
+extract_final_text() {
+  jq -s -r '[.[] | select(.type=="text") | .part.text] | last // empty' 2>/dev/null
+}
+
 run_step() {
   local label="$1"
   local command_text="$2"
@@ -70,10 +97,6 @@ run_step() {
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 
   local out
-  # --format json streams structured events; we still rely on the literal
-  # AUTORUN_STATUS trailer in the final assistant text rather than parsing
-  # event types, so this works whether or not --format json is supported by
-  # your opencode version. Drop --format json below if it errors for you.
   if ! out=$(opencode run --agent lead --format json "$command_text" 2>&1); then
     echo "$out" | tee -a "$LOG"
     echo "Error: 'opencode run' itself failed (non-zero exit) for: $command_text" | tee -a "$LOG"
@@ -83,11 +106,20 @@ run_step() {
 
   echo "$out" >> "$LOG"
 
+  local final_text
+  final_text=$(echo "$out" | extract_final_text)
+
+  if [[ -z "$final_text" ]]; then
+    echo "Warning: could not extract a final text response via jq (malformed JSON, no 'text' event found, or --format json not supported by your opencode version)." | tee -a "$LOG"
+    echo "Falling back to a raw scan of the full output — this is the old, less reliable path and can false-positive on tool output containing the literal string 'AUTORUN_STATUS:' (e.g. the phase-lifecycle skill's own documentation). Treat any result from this fallback with suspicion." | tee -a "$LOG"
+    final_text="$out"
+  fi
+
   local status_line
-  status_line=$(grep -o 'AUTORUN_STATUS:.*' <<<"$out" | tail -n1)
+  status_line=$(grep -o 'AUTORUN_STATUS:.*' <<<"$final_text" | tail -n1)
 
   if [[ -z "$status_line" ]]; then
-    echo "Warning: no AUTORUN_STATUS trailer found in output for: $command_text" | tee -a "$LOG"
+    echo "Warning: no AUTORUN_STATUS trailer found in the final text response for: $command_text" | tee -a "$LOG"
     echo "Treating as NEEDS_HUMAN — see $LOG for the full transcript of this step." | tee -a "$LOG"
     echo "Stopped. Review $LOG, resolve manually, then re-run this script — already-completed phases are safe to skip past by editing the loop or re-running individual /implement-phase-auto or /review-phase-auto commands by hand." | tee -a "$LOG"
     exit 1

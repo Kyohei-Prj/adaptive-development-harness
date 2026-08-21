@@ -12,6 +12,8 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 
 **Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed; anything skipped after a FAIL is logged as deferred, not dropped). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL or a parallel-task merge conflict occurs.
 
+**Fully hands-off alternative:** `scripts/autorun.sh <slug>` — an external shell script (not an in-chat command) that drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` invocations, one process per phase. No checkpoints, no session ever accumulates across phases, output logged to `docs/<slug>/autorun.log`. Prefer this over `/autorun` for long plans — see the "Smart zone / dumb zone" section below for why.
+
 **Before merging to main:** run `/finalize <slug>` — re-checks the whole feature branch as one unit (not phase-by-phase) to catch integration issues no single phase review would see.
 
 **After merging to main:** run `/archive <slug>` to move `docs/<slug>/` to `docs/_archive/<slug>/`, so stale planning docs don't mislead a future `/grill` or `/plan` session for unrelated work.
@@ -34,14 +36,33 @@ project's `.gitignore` if it isn't covered already; it's already excluded
 from `opencode.json`'s file watcher.
 
 ## Destructive-command guardrails
-`task-implementer` and `issue-resolver` have broad edit/bash access because
-they need to run freely within a task, including during unattended
-`/autorun` runs — but a small denylist blocks the genuinely destructive
-commands outright regardless of how a task is phrased: force-push,
-`rm -rf`/`rm -fr`, `git reset --hard`, `git checkout -- .` /
-`git checkout --force`, and `git clean -f`. If a task or issue fix seems to
-genuinely need one of these, the agent is instructed to stop and report
-rather than find a workaround — that decision stays with you.
+`lead`, `phase-reviewer`, `architecture-reviewer`, `task-implementer`, and
+`issue-resolver` all use the same permission shape: `"*": allow` for bash,
+with a denylist blocking the genuinely destructive commands outright
+regardless of how a task is phrased — force-push, `rm -rf`/`rm -fr`,
+`git reset --hard`, `git checkout -- .` / `git checkout --force`,
+`git clean -f`, and forced branch deletion (`git branch -D`).
+`phase-reviewer` and `architecture-reviewer` also deny `git commit`/
+`git add`/`git push` outright, since they're read-only by design (`edit:
+deny`) and the denylist closes the same door at the bash layer, which is a
+separate channel from the edit tool. `lead` additionally restricts `git
+merge` and `git mv` to the narrow patterns its own procedures actually use
+(`git merge task/*`, `git mv docs/*/... docs/_archive/*/...`), denying the
+unscoped versions.
+
+If a task or issue fix seems to genuinely need a denied command, the agent
+is instructed to stop and report rather than find a workaround — that
+decision stays with you.
+
+**Why allow-by-default instead of a narrow allowlist with `ask` as the
+fallback:** an allowlist only covers the commands someone thought to list
+in advance, and `ask` requires a human to answer — which works fine
+interactively, but silently stalls forever when an agent is invoked
+headlessly (`opencode run`, as `scripts/autorun.sh` does). Every agent that
+might run in that headless path uses allow-by-default-with-denylist, not
+allowlist-with-ask-fallback, for exactly this reason. `grill` is the one
+deliberate exception (`webfetch: ask`) — it's interactive by design and
+never invoked headlessly, so `ask` is correct there.
 
 ## Smart zone / dumb zone
 LLM reasoning degrades well before the advertised context limit — treat
@@ -63,7 +84,16 @@ a session run long:
   stages.
 - This is also why `lead` is locked to delegating rather than editing files
   itself: keeping the orchestrating session small is what makes multi-phase
-  runs (including `/autorun`) viable at all.
+  runs viable at all — **with one exception.** The in-chat `/autorun`
+  command still runs every phase inside one continuous `lead` session (a
+  single checkpoint pause between phases, no restart), so on a long plan its
+  own session can drift toward the smart-zone ceiling even though it never
+  holds diffs. For a plan with many phases, prefer `scripts/autorun.sh`
+  instead — it drives `/implement-phase-auto`, `/review-phase-auto`, and
+  `/finalize` via separate `opencode run` calls, one process per phase, so
+  every phase's orchestrating session is genuinely fresh rather than
+  accumulated. `/autorun` remains a reasonable choice for short plans where
+  staying in the loop matters more than long-run context hygiene.
 
 ## Docs
 All planning docs for a unit of work live under `docs/<slug>/`. See the `planning-docs` skill for templates and task type tag rules.
