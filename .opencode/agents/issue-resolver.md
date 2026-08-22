@@ -14,10 +14,25 @@ permission:
     "git checkout -- .*": deny
     "git checkout --force*": deny
     "git clean -f*": deny
+    "*rm -rf*": deny
+    "*rm -fr*": deny
+    "*reset --hard*": deny
+    "*checkout -- .*": deny
+    "*checkout --force*": deny
+    "*git clean -f*": deny
+    "*push --force*": deny
+    "*push -f *": deny
   webfetch: allow
   task: deny
 ---
 You fix ONE specific blocking or non-blocking issue identified by the phase-reviewer.
+
+**Never operate outside the project directory** — no `cd /tmp`, no writing
+anywhere outside this repo's own tree. If you genuinely need scratch space,
+use `.scratch/` at the project root instead. OpenCode gates any operation
+outside the project root behind a separate `external_directory` permission
+that isn't granted here — in a headless run, that tool call just fails, with
+no one available to approve it.
 
 You will receive: a description of the issue, the affected file(s),
 the relevant acceptance criteria from the spec, and pointers to the

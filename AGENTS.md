@@ -35,6 +35,21 @@ finish — never in parallel, and never automatically past a merge conflict
 project's `.gitignore` if it isn't covered already; it's already excluded
 from `opencode.json`'s file watcher.
 
+## Stay inside the project directory
+`lead`, `task-implementer`, and `issue-resolver` are all instructed to never
+operate outside the project's own tree — no `cd /tmp`, no writing to a home
+directory, nothing outside this repo. If an agent needs scratch space (e.g.
+testing whether a package installs cleanly before committing to it in a real
+task), it uses `.scratch/` at the project root instead — already excluded
+from `opencode.json`'s file watcher; add it to `.gitignore` too. This isn't
+just tidiness: OpenCode gates any file operation outside the project root
+behind a separate `external_directory` permission, distinct from `bash`/
+`edit`/`webfetch`, and no agent here has it granted. Interactively that
+means a prompt you'd have to approve; headlessly (via `scripts/autorun.sh`)
+there's no one to approve it and the tool call just fails. Staying inside
+the sandbox avoids the failure mode entirely and keeps an unattended
+agent's blast radius limited to the repo it's supposed to be touching.
+
 ## Destructive-command guardrails
 `lead`, `phase-reviewer`, `architecture-reviewer`, `task-implementer`, and
 `issue-resolver` all use the same permission shape: `"*": allow` for bash,
@@ -53,6 +68,15 @@ unscoped versions.
 If a task or issue fix seems to genuinely need a denied command, the agent
 is instructed to stop and report rather than find a workaround — that
 decision stays with you.
+
+**Each denied pattern is listed twice: once as a prefix match (`"rm -rf*"`)
+and once as a match-anywhere-in-the-string (`"*rm -rf*"`).** A prefix-only
+pattern only catches the dangerous command when it's the first thing in the
+string — it does NOT catch `cd /tmp && rm -rf uvtest`, since that string
+starts with `cd`, not `rm -rf`. Compound commands chained with `&&`/`;`/`|`
+are extremely common (an agent probing an environment before committing to
+a real task will naturally write multi-step one-liners), so a denylist that
+only checks the prefix has a real gap. The match-anywhere versions close it.
 
 **Why allow-by-default instead of a narrow allowlist with `ask` as the
 fallback:** an allowlist only covers the commands someone thought to list

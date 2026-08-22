@@ -129,6 +129,7 @@ User idea
 your-project/
 ├── AGENTS.md                            # Shared workflow rules, inherited by all agents
 ├── .worktrees/                          # Ephemeral — per-task git worktrees for [parallel-with] groups (gitignore this)
+├── .scratch/                            # Ephemeral — agent scratch space, kept inside the project so it never needs the external_directory permission (gitignore this)
 ├── .opencode/
 │   ├── agents/
 │   │   ├── grill.md                     # Primary — Grill (alignment) stage
@@ -614,6 +615,21 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 ---
 
+## Additional Tools
+
+**rtk** output commpression tool
+```bash
+cargo install --git https://github.com/rtk-ai/rtk
+rtk init -g --opencode
+```
+
+**opencode-dcp** conversation context manager
+```bash
+opencode plugin @tarquinen/opencode-dcp@latest --global
+```
+
+---
+
 ## Tips & Conventions
 
 **Run `/grill` before `/plan` for anything with real design ambiguity.** For a one-line bug fix or trivial task, skip straight to `/plan` — the planner will just ask a question or two directly. For anything where you're not sure yet what "done" looks like, grill first. Close the grill session before opening `/plan`; don't try to plan inside the same session.
@@ -639,6 +655,8 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 **Logged risks and deferred issues resurface automatically, but only as a heads-up.** At the start of each phase, `lead` checks `feedback-log.md` for relevant open risks and deferred issues and mentions them before delegating tasks. It won't act on them itself — if one needs real work, add it as a tagged task in `implementation-plan.md` (the reviewer's "suggested doc edits" often do this for you).
 
 **Parallel tasks run in worktrees, not the shared tree.** `[parallel-with: X]` tags trigger isolated git worktrees under `.worktrees/`, one branch per task, merged back sequentially — never in parallel. Add `.worktrees/` to your `.gitignore`; it's already excluded from the file watcher in `opencode.json`. If a merge conflict happens during the merge-back, `lead` stops and hands it to you rather than resolving it itself.
+
+**Agents stay inside the project directory, on purpose.** `lead`, `task-implementer`, and `issue-resolver` are instructed to never `cd` outside the repo — any exploratory or scratch work (testing a package install, a throwaway build) goes in `.scratch/` at the project root instead. This isn't just tidiness: OpenCode gates file operations outside the project root behind a separate `external_directory` permission that no agent here has, and that gate auto-rejects with no one around to approve it in a headless run. Add `.scratch/` to your `.gitignore`; it's already excluded from the file watcher.
 
 **The destructive-command denylist is intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, and `git clean -f` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
@@ -706,4 +724,10 @@ Some `opencode` versions/platforms have had `run` require a pre-existing session
 
 **`scripts/autorun.sh` hangs indefinitely (not a clean FAIL, just never returns) on a step that works fine interactively**  
 This is almost always a permission set to `ask` somewhere in the agent chain that step exercises. `ask` needs a human to answer, and there's no one there in a headless `opencode run` — it doesn't error, it just waits forever (or times out at whatever your shell/CI's own limit is, which can look like a hang for a long time). `lead`, `phase-reviewer`, and `architecture-reviewer` are all configured allow-by-default-with-denylist specifically to avoid this — if you've customized any of their `permission:` blocks (or added a new subagent to the headless path), check for a lingering `"*": ask` bash fallback or an `edit: ask` you meant to loosen. Also check for stale *prompt text* telling the agent to "ask first" even if the permission itself is `allow` — a fixed permission doesn't help if the agent's own instructions still tell it to pause and wait for confirmation that will never come (this exact bug existed in `lead.md` at one point: `edit: allow` in the frontmatter, but body text still said "ask first").
+
+**`docs/<slug>/autorun.log` shows `permission requested: external_directory (...); auto-rejecting`, and the step never completes as expected**  
+An agent tried to touch a path outside the project directory — most commonly `cd /tmp` for some scratch/exploratory work (testing whether a package installs cleanly before committing to a real task, for example). OpenCode gates any file operation outside the project root behind a separate `external_directory` permission, distinct from `bash`/`edit`/`webfetch` — no agent in this harness has it granted, on purpose (broad filesystem access outside the repo is a real risk for an agent running unattended). `lead`, `task-implementer`, and `issue-resolver` are all explicitly instructed to stay inside the project directory and use `.scratch/` at the project root instead of `/tmp` for anything exploratory — if you're hitting this, either that instruction didn't take (worth a look at whether it's still present in your copy of the agent file) or the agent found some other reason to reach outside the sandbox. Don't "fix" this by granting `external_directory` — redirect the behavior inward instead; it's the safer fix and the one this harness is built around.
+
+**A denied bash command still went through** (e.g. something that should have hit the `rm -rf` denylist didn't)  
+Check whether the actual command was a **compound** one — `cd somewhere && rm -rf thing`, or anything chained with `&&`/`;`/`|`. The denylist patterns exist in two forms per dangerous command: a prefix match (`"rm -rf*"`) and a match-anywhere-in-the-string version (`"*rm -rf*"`). Only the second form catches a dangerous command that isn't literally the first thing in the string. If you've added your own deny patterns, make sure to add both forms — a prefix-only pattern has a real gap for exactly the kind of multi-step one-liner an agent naturally writes when probing an environment.
 

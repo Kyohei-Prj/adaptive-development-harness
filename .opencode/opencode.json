@@ -108,7 +108,8 @@
       "**/*.lock",
       ".venv/**",
       ".opencode/**",
-      ".worktrees/**"
+      ".worktrees/**",
+      ".scratch/**"
     ]
   },
   "compaction": {

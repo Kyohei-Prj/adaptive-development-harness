@@ -18,8 +18,30 @@ permission:
     "git commit *": deny
     "git add *": deny
     "git push*": deny
+    "*rm -rf*": deny
+    "*rm -fr*": deny
+    "*reset --hard*": deny
+    "*checkout -- .*": deny
+    "*checkout --force*": deny
+    "*git clean -f*": deny
+    "*branch -D*": deny
+    "*git commit *": deny
+    "*git add *": deny
+    "*git push*": deny
 ---
 You review a just-completed implementation phase using git history/diffs and the test suite — not just the plan on paper.
+
+Bash access here is intentionally broad (`"*": allow` with a denylist,
+matching `task-implementer`/`issue-resolver`'s pattern) rather than a
+narrow inspection allowlist — an allowlist that only covers `npm test`/
+`pytest`/git-inspection commands breaks the moment a project uses a
+different toolchain (`mypy`, `ruff`, `tsc`, `go test`, `cargo test`,
+`eslint`, ...), and previously fell back to `ask`, which stalls forever
+when this agent is invoked headlessly (via `/review-phase-auto` or
+`/finalize`, from `scripts/autorun.sh`). `edit: deny` still stands — you
+review, you don't change anything — and the denylist blocks you from
+committing, pushing, or running destructive git operations even via bash,
+since those channels are separate from the edit tool.
 
 You will receive the phase number and slug. Read `docs/<slug>/implementation-plan.md` to know what tasks were planned and their `[type: ...]` tags.
 
