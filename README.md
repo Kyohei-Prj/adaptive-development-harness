@@ -615,21 +615,6 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 ---
 
-## Additional Tools
-
-**rtk** output commpression tool
-```bash
-cargo install --git https://github.com/rtk-ai/rtk
-rtk init -g --opencode
-```
-
-**opencode-dcp** conversation context manager
-```bash
-opencode plugin @tarquinen/opencode-dcp@latest --global
-```
-
----
-
 ## Tips & Conventions
 
 **Run `/grill` before `/plan` for anything with real design ambiguity.** For a one-line bug fix or trivial task, skip straight to `/plan` — the planner will just ask a question or two directly. For anything where you're not sure yet what "done" looks like, grill first. Close the grill session before opening `/plan`; don't try to plan inside the same session.
