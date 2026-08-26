@@ -85,7 +85,18 @@ echo "Found ${#PHASES[@]} phase(s): ${PHASES[*]}"
 # only `type=="text"` events' `.part.text` — and only the LAST one, i.e.
 # the model's actual final response — avoids both problems.
 extract_final_text() {
-  jq -s -r '[.[] | select(.type=="text") | .part.text] | last // empty' 2>/dev/null
+  # Concatenate ALL type=="text" events, not just the last one. A model can
+  # legitimately emit several separate text segments in one turn (narration
+  # between tool calls, then its report) — and despite instructions to make
+  # the AUTORUN_STATUS line the literal last line of the response, a model
+  # can still tack on a trailing remark as its own extra text event after
+  # the real report ("let me know if you'd like me to continue..."). If we
+  # only look at the single LAST text event, a trailing remark like that
+  # hides a trailer that's genuinely present earlier in the same turn.
+  # Concatenating everything and taking the last matching line downstream
+  # is robust to both cases: the report being the true final segment, or
+  # something trailing after it.
+  jq -s -r '[.[] | select(.type=="text") | .part.text] | join("\n")' 2>/dev/null
 }
 
 run_step() {

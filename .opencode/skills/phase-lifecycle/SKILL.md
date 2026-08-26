@@ -118,3 +118,13 @@ inside the command, and omitting it in a headless run makes
 `scripts/autorun.sh` fail closed (treated as `NEEDS_HUMAN`) rather than
 silently assuming success. In an interactive session a human just ignores
 the line; that's a fine default to fail toward.
+
+**Do not write anything after the trailer line — no closing remark, no
+offer to continue, no question.** The trailer must be the literal end of
+the entire response, not just the end of the "report" part of it. This
+matters even beyond readability: `scripts/autorun.sh` extracts every
+`text` segment you produce in the turn and searches all of it for this
+line, so a trailing remark won't make the script miss the trailer — but a
+human skimming the transcript later may end up reading a trailing "let me
+know if..." as if it were still part of an unfinished response. Say
+everything you need to say, then stop.
