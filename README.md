@@ -291,7 +291,7 @@ When all phases are complete, `lead` reports a full run summary and reminds you 
 
 **The trade-off:** because everything happens in one `lead` session, that session's own context accumulates a summary per phase for the life of the run. Fine for a short plan; on a long one (8+ phases), the orchestrating session itself can drift toward the smart zone ceiling even though it never holds full diffs — see [Smart zone / dumb zone](#tips--conventions) below.
 
-#### Option B — `scripts/autorun.sh <slug>` (headless, genuinely fresh session per phase)
+#### Option B (experimental) — `scripts/autorun.sh <slug>` (headless, genuinely fresh session per phase)
 
 For long plans, or for true unattended automation (CI, a cron job, "kick it off before you leave for the day"), use the driver script instead:
 
