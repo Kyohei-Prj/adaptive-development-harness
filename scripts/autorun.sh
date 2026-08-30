@@ -101,14 +101,27 @@ extract_final_text() {
 
 run_step() {
   local label="$1"
-  local command_text="$2"
+  local command_name="$2"
+  local command_args="$3"
+  # For logging/error messages only — NOT what's sent to opencode.
+  local command_text="/$command_name $command_args"
 
   echo "" | tee -a "$LOG"
   echo "=== $label ===" | tee -a "$LOG"
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 
+  # IMPORTANT: `opencode run` does NOT resolve slash-command syntax in its
+  # free-text prompt argument — that expansion only happens in the
+  # interactive TUI. Passing "/implement-phase-auto 1 todo-app" as the
+  # plain message here would forward that literal string to the model,
+  # which has no idea what a slash command is and either hallucinates a
+  # response or errors — silently breaking the whole hand-off chain this
+  # script depends on. The `--command <name>` flag is what actually
+  # resolves against .opencode/commands/<name>.md; the positional message
+  # after it supplies the command's arguments ($1, $2, ...), same as
+  # typing "/implement-phase-auto 1 todo-app" would in the TUI.
   local out
-  if ! out=$(opencode run --agent lead --format json "$command_text" 2>&1); then
+  if ! out=$(opencode run --agent lead --format json --command "$command_name" "$command_args" 2>&1); then
     echo "$out" | tee -a "$LOG"
     echo "Error: 'opencode run' itself failed (non-zero exit) for: $command_text" | tee -a "$LOG"
     echo "This is a tooling/auth/connectivity failure, not an AUTORUN_STATUS: FAIL from the agent — check the output above." | tee -a "$LOG"
@@ -160,11 +173,11 @@ run_step() {
 }
 
 for N in "${PHASES[@]}"; do
-  run_step "Phase $N: implement" "/implement-phase-auto $N $SLUG"
-  run_step "Phase $N: review"    "/review-phase-auto $N $SLUG"
+  run_step "Phase $N: implement" "implement-phase-auto" "$N $SLUG"
+  run_step "Phase $N: review"    "review-phase-auto"    "$N $SLUG"
 done
 
-run_step "Finalize" "/finalize $SLUG"
+run_step "Finalize" "finalize" "$SLUG"
 
 echo "" | tee -a "$LOG"
 echo "All phases complete and finalized." | tee -a "$LOG"
