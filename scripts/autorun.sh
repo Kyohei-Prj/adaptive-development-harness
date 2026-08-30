@@ -117,8 +117,19 @@ run_step() {
 
   echo "$out" >> "$LOG"
 
+  # NOTE: `|| true` on both extractions below is load-bearing, not
+  # decoration. jq (on malformed/empty input) and grep (on no match) both
+  # exit non-zero when they legitimately find nothing — that's the normal,
+  # expected way of saying "nothing here." Under `set -euo pipefail`, that
+  # non-zero status propagates through the pipe and, because these are
+  # plain `var=$(...)` assignments rather than part of an `if`/`&&`,
+  # `set -e` kills the whole script on that line — BEFORE the `if [[ -z
+  # ... ]]` fallback below ever runs. That fallback is exactly the
+  # graceful-degradation path this script is supposed to take, so without
+  # `|| true` here it can never fire: the script just dies silently
+  # instead of printing the warning and the resume instructions.
   local final_text
-  final_text=$(echo "$out" | extract_final_text)
+  final_text=$(echo "$out" | extract_final_text || true)
 
   if [[ -z "$final_text" ]]; then
     echo "Warning: could not extract a final text response via jq (malformed JSON, no 'text' event found, or --format json not supported by your opencode version)." | tee -a "$LOG"
@@ -127,7 +138,7 @@ run_step() {
   fi
 
   local status_line
-  status_line=$(grep -o 'AUTORUN_STATUS:.*' <<<"$final_text" | tail -n1)
+  status_line=$(grep -o 'AUTORUN_STATUS:.*' <<<"$final_text" | tail -n1 || true)
 
   if [[ -z "$status_line" ]]; then
     echo "Warning: no AUTORUN_STATUS trailer found in the final text response for: $command_text" | tee -a "$LOG"
