@@ -12,7 +12,27 @@
 # opening another, except nothing here has to remember to do that.
 #
 # Usage:
-#   scripts/autorun.sh <slug>
+#   scripts/autorun.sh <slug> [start_phase]
+#
+#   start_phase (optional, default: the plan's first phase number) — resume
+#   from this phase's implement step onward, skipping every phase before
+#   it. Use this after a stop-and-fix: autorun exits non-zero and logs
+#   "Stopped at: Phase N: <step>" whenever a phase needs human help (a
+#   NEEDS_HUMAN/FAIL trailer, a missing trailer, or an `opencode run`
+#   failure). Resolve the issue by hand — finish that phase's implement
+#   and review yourself if needed, commit as normal — then re-invoke this
+#   script with start_phase set to the NEXT phase number so it doesn't
+#   redo work that's already committed. Passing a start_phase past the
+#   last phase in the plan skips the phase loop entirely and runs only
+#   /finalize.
+#
+#   NOTE ON GIT STATE: phases stack — each phase N branches off phase N-1's
+#   branch (feature/<slug>-phase-(N-1)), not off main. This script doesn't
+#   create or switch branches itself; it relies on whatever's currently
+#   checked out on disk. So before resuming, make sure you're sitting on
+#   the branch the resumed phase should build on top of (normally
+#   feature/<slug>-phase-(start_phase-1), assuming you completed that
+#   phase's review manually and it's committed).
 #
 # Requires:
 #   - the `opencode` CLI on PATH, with headless auth already configured
@@ -33,9 +53,18 @@
 
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 <slug>" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "Usage: $0 <slug> [start_phase]" >&2
   exit 2
+fi
+
+START_PHASE=""
+if [[ $# -eq 2 ]]; then
+  START_PHASE="$2"
+  if ! [[ "$START_PHASE" =~ ^[0-9]+$ ]]; then
+    echo "Error: start_phase must be a positive integer, got: $START_PHASE" >&2
+    exit 2
+  fi
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -58,6 +87,9 @@ mkdir -p "docs/$SLUG"
   echo "===================================================="
   echo "autorun.sh started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "slug: $SLUG"
+  if [[ -n "$START_PHASE" ]]; then
+    echo "resuming from phase: $START_PHASE (earlier phases assumed already complete)"
+  fi
   echo "===================================================="
 } >> "$LOG"
 
@@ -69,7 +101,34 @@ if [[ ${#PHASES[@]} -eq 0 ]]; then
   exit 1
 fi
 
-echo "Found ${#PHASES[@]} phase(s): ${PHASES[*]}"
+echo "Found ${#PHASES[@]} phase(s) in plan: ${PHASES[*]}"
+
+if [[ -n "$START_PHASE" ]]; then
+  # Validate start_phase is an actual phase number from the plan, not just
+  # any integer — a typo here (e.g. resuming at 3 when the plan only has
+  # phases 1, 2, 4, 5) should fail loudly rather than silently produce an
+  # empty or wrong-looking run.
+  found=0
+  for p in "${PHASES[@]}"; do
+    [[ "$p" == "$START_PHASE" ]] && found=1 && break
+  done
+  if [[ $found -eq 0 && "$START_PHASE" -le "${PHASES[-1]}" ]]; then
+    echo "Error: start_phase $START_PHASE is not one of the plan's phase numbers (${PHASES[*]})." >&2
+    exit 2
+  fi
+
+  filtered=()
+  for p in "${PHASES[@]}"; do
+    [[ "$p" -ge "$START_PHASE" ]] && filtered+=("$p")
+  done
+  PHASES=("${filtered[@]}")
+
+  if [[ ${#PHASES[@]} -eq 0 ]]; then
+    echo "start_phase $START_PHASE is past the last phase ($PLAN's highest phase) — skipping the phase loop and running only /finalize." | tee -a "$LOG"
+  else
+    echo "Resuming from phase $START_PHASE onward: ${PHASES[*]}" | tee -a "$LOG"
+  fi
+fi
 
 # `opencode run --format json` emits one JSON object per line (JSONL), with
 # a `type` field: "text" (actual model output), "tool_use" (a tool call's
@@ -156,7 +215,7 @@ run_step() {
   if [[ -z "$status_line" ]]; then
     echo "Warning: no AUTORUN_STATUS trailer found in the final text response for: $command_text" | tee -a "$LOG"
     echo "Treating as NEEDS_HUMAN — see $LOG for the full transcript of this step." | tee -a "$LOG"
-    echo "Stopped. Review $LOG, resolve manually, then re-run this script — already-completed phases are safe to skip past by editing the loop or re-running individual /implement-phase-auto or /review-phase-auto commands by hand." | tee -a "$LOG"
+    echo "Stopped. Resolve manually (see $LOG for the full transcript), then re-run: $0 $SLUG <next_phase_number>" | tee -a "$LOG"
     exit 1
   fi
 
@@ -168,7 +227,7 @@ run_step() {
 
   echo "Stopped at: $label" | tee -a "$LOG"
   echo "Reason: $status_line" | tee -a "$LOG"
-  echo "Review $LOG for the full transcript. Resolve manually, then re-run — you'll want to skip already-completed phases (edit this script's phase list, or re-invoke the remaining /implement-phase-auto and /review-phase-auto commands by hand)." | tee -a "$LOG"
+  echo "Review $LOG for the full transcript. Resolve manually, then re-run: $0 $SLUG <next_phase_number> — this resumes from that phase onward without redoing already-committed work." | tee -a "$LOG"
   exit 1
 }
 
