@@ -26,6 +26,20 @@
 #   last phase in the plan skips the phase loop entirely and runs only
 #   /finalize.
 #
+#   start_phase also accepts an "N:review" suffix (e.g. "3:review") to
+#   resume Phase 3 at its REVIEW step, skipping that phase's implement step
+#   (use this when implement finished and committed but review is what
+#   stopped). Only the first resumed phase is affected — later phases
+#   always run both steps.
+#
+#   SUPERVISED MODE: for an unattended run that heals itself, prefer
+#   `/autorun-supervised <slug> [start_phase]` (or drive this script through
+#   scripts/autorun-watch.sh) — it launches this script in the background,
+#   detects stalls via session activity, diagnoses failures by exporting the
+#   step's session, and resumes automatically up to its retry caps. Each
+#   `opencode run` below carries a --title tag for exactly that reason: it
+#   is how the watcher locates the currently-running step's session.
+#
 #   NOTE ON GIT STATE: phases stack — each phase N branches off phase N-1's
 #   branch (feature/<slug>-phase-(N-1)), not off main. This script doesn't
 #   create or switch branches itself; it relies on whatever's currently
@@ -59,10 +73,13 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
 fi
 
 START_PHASE=""
+START_STEP=""
 if [[ $# -eq 2 ]]; then
-  START_PHASE="$2"
-  if ! [[ "$START_PHASE" =~ ^[0-9]+$ ]]; then
-    echo "Error: start_phase must be a positive integer, got: $START_PHASE" >&2
+  if [[ "$2" =~ ^([0-9]+)(:(review))?$ ]]; then
+    START_PHASE="${BASH_REMATCH[1]}"
+    START_STEP="${BASH_REMATCH[3]}"
+  else
+    echo "Error: start_phase must be a positive integer, optionally with a ':review' suffix (e.g. 3 or 3:review), got: $2" >&2
     exit 2
   fi
 fi
@@ -88,7 +105,7 @@ mkdir -p "docs/$SLUG"
   echo "autorun.sh started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "slug: $SLUG"
   if [[ -n "$START_PHASE" ]]; then
-    echo "resuming from phase: $START_PHASE (earlier phases assumed already complete)"
+    echo "resuming from phase: $START_PHASE${START_STEP:+:$START_STEP} (earlier phases assumed already complete)"
   fi
   echo "===================================================="
 } >> "$LOG"
@@ -124,7 +141,13 @@ if [[ -n "$START_PHASE" ]]; then
   PHASES=("${filtered[@]}")
 
   if [[ ${#PHASES[@]} -eq 0 ]]; then
+    if [[ -n "$START_STEP" ]]; then
+      echo "Error: start_phase $START_PHASE:review asks to resume at a review step, but no phases remain to run (it is past the plan's highest phase)." >&2
+      exit 2
+    fi
     echo "start_phase $START_PHASE is past the last phase ($PLAN's highest phase) — skipping the phase loop and running only /finalize." | tee -a "$LOG"
+  elif [[ -n "$START_STEP" ]]; then
+    echo "Resuming from phase $START_PHASE at its $START_STEP step onward: ${PHASES[*]}" | tee -a "$LOG"
   else
     echo "Resuming from phase $START_PHASE onward: ${PHASES[*]}" | tee -a "$LOG"
   fi
@@ -162,6 +185,7 @@ run_step() {
   local label="$1"
   local command_name="$2"
   local command_args="$3"
+  local run_id="$4"
   # For logging/error messages only — NOT what's sent to opencode.
   local command_text="/$command_name $command_args"
 
@@ -179,8 +203,13 @@ run_step() {
   # resolves against .opencode/commands/<name>.md; the positional message
   # after it supplies the command's arguments ($1, $2, ...), same as
   # typing "/implement-phase-auto 1 todo-app" would in the TUI.
+  # --title tags the child session (e.g. "autorun-my-app-p1-implement") so
+  # scripts/autorun-watch.sh can find the one session that should currently
+  # be making progress (stall detection) and /autorun-supervised can
+  # `opencode export` exactly that session after a stop — instead of
+  # guessing "most recent session" and reading some unrelated one.
   local out
-  if ! out=$(opencode run --agent lead --format json --command "$command_name" "$command_args" 2>&1); then
+  if ! out=$(opencode run --agent lead --format json --title "autorun-$SLUG-$run_id" --command "$command_name" "$command_args" 2>&1); then
     echo "$out" | tee -a "$LOG"
     echo "Error: 'opencode run' itself failed (non-zero exit) for: $command_text" | tee -a "$LOG"
     echo "This is a tooling/auth/connectivity failure, not an AUTORUN_STATUS: FAIL from the agent — check the output above." | tee -a "$LOG"
@@ -215,7 +244,7 @@ run_step() {
   if [[ -z "$status_line" ]]; then
     echo "Warning: no AUTORUN_STATUS trailer found in the final text response for: $command_text" | tee -a "$LOG"
     echo "Treating as NEEDS_HUMAN — see $LOG for the full transcript of this step." | tee -a "$LOG"
-    echo "Stopped. Resolve manually (see $LOG for the full transcript), then re-run: $0 $SLUG <next_phase_number>" | tee -a "$LOG"
+    echo "Stopped. Resolve manually (see $LOG for the full transcript), then re-run: $0 $SLUG <phase> — or <phase>:review to resume at that phase's review step" | tee -a "$LOG"
     exit 1
   fi
 
@@ -227,16 +256,24 @@ run_step() {
 
   echo "Stopped at: $label" | tee -a "$LOG"
   echo "Reason: $status_line" | tee -a "$LOG"
-  echo "Review $LOG for the full transcript. Resolve manually, then re-run: $0 $SLUG <next_phase_number> — this resumes from that phase onward without redoing already-committed work." | tee -a "$LOG"
+  echo "Review $LOG for the full transcript. Resolve manually, then re-run: $0 $SLUG <phase> (or <phase>:review to skip straight to that phase's review step) — this resumes from that point onward without redoing already-committed work." | tee -a "$LOG"
   exit 1
 }
 
+first=1
 for N in "${PHASES[@]}"; do
-  run_step "Phase $N: implement" "implement-phase-auto" "$N $SLUG"
-  run_step "Phase $N: review"    "review-phase-auto"    "$N $SLUG"
+  if [[ $first -eq 1 && "$START_STEP" == "review" ]]; then
+    # Only the first resumed phase can skip implement — it's the one whose
+    # implement step already finished and committed before the run stopped.
+    echo "Skipping Phase $N implement step (resumed at ${N}:review)." | tee -a "$LOG"
+  else
+    run_step "Phase $N: implement" "implement-phase-auto" "$N $SLUG" "p${N}-implement"
+  fi
+  run_step "Phase $N: review" "review-phase-auto" "$N $SLUG" "p${N}-review"
+  first=0
 done
 
-run_step "Finalize" "finalize" "$SLUG"
+run_step "Finalize" "finalize" "$SLUG" "finalize"
 
 echo "" | tee -a "$LOG"
 echo "All phases complete and finalized." | tee -a "$LOG"

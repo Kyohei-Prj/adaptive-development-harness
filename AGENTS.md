@@ -12,7 +12,9 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 
 **Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed; anything skipped after a FAIL is logged as deferred, not dropped). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL or a parallel-task merge conflict occurs.
 
-**Fully hands-off alternative:** `scripts/autorun.sh <slug>` — an external shell script (not an in-chat command) that drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` invocations, one process per phase. No checkpoints, no session ever accumulates across phases, output logged to `docs/<slug>/autorun.log`. Prefer this over `/autorun` for long plans — see the "Smart zone / dumb zone" section below for why.
+**Fully hands-off alternative:** `scripts/autorun.sh <slug> [start_phase]` — an external shell script (not an in-chat command) that drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` invocations, one process per phase. No checkpoints, no session ever accumulates across phases, output logged to `docs/<slug>/autorun.log`. Prefer this over `/autorun` for long plans — see the "Smart zone / dumb zone" section below for why. On a stop it exits non-zero with "Stopped at: ..." so you can fix and resume at `start_phase` (plain `N`, or `N:review` to skip straight to that phase's review step).
+
+**Supervised full-auto mode:** `/autorun-supervised <slug> [start_phase]` (uses the `supervisor` agent) — for when even re-launching `autorun.sh` after every stop is too much human involvement. It launches the script through `scripts/autorun-watch.sh` (backgrounds it in its own process group; detects stalls as "no session/log activity for 15 minutes" and kills the stuck group) and then self-heals unattended: diagnoses the stopped step by exporting its session (`opencode export` on the `--title`-tagged child session), retries transient failures, delegates code fixes to `issue-resolver`/`task-implementer`, resolves merge conflicts as recovery glue, and makes the judgment calls that steps would otherwise park as `NEEDS_HUMAN` — every such call logged to a "Supervisor decisions (auto)" section in `feedback-log.md` — then resumes from exactly where it stopped, under caps (2 retries/step, 4/run, stops on a repeated failure reason). Humans see exactly two prompts: one confirm at startup, one final report/escalation. Risky by design — meant for trivial projects where that tradeoff is explicitly accepted. It never pushes, never merges to main, and WIP-commits any half-finished state before killing/retrying so nothing is silently lost.
 
 **Before merging to main:** run `/finalize <slug>` — re-checks the whole feature branch as one unit (not phase-by-phase) to catch integration issues no single phase review would see.
 
@@ -51,8 +53,9 @@ the sandbox avoids the failure mode entirely and keeps an unattended
 agent's blast radius limited to the repo it's supposed to be touching.
 
 ## Destructive-command guardrails
-`lead`, `phase-reviewer`, `architecture-reviewer`, `task-implementer`, and
-`issue-resolver` all use the same permission shape: `"*": allow` for bash,
+`lead`, `supervisor`, `phase-reviewer`, `architecture-reviewer`,
+`task-implementer`, and `issue-resolver` all use the same permission shape:
+`"*": allow` for bash,
 with a denylist blocking the genuinely destructive commands outright
 regardless of how a task is phrased — force-push, `rm -rf`/`rm -fr`,
 `git reset --hard`, `git checkout -- .` / `git checkout --force`,
