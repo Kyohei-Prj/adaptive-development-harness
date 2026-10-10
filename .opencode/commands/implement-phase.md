@@ -25,3 +25,5 @@ Steps:
 - **Any destructive-command refusal surfaces from a subagent** (see the denylist in `task-implementer.md`) that blocks completing a task as described.
 
 On any stop condition: do NOT commit. Stop delegating, surface the root cause to me in full — what was attempted, what succeeded before the stop, and exactly what stopped it — and ask me for direction instead of halting or working around it.
+
+On any stop condition also record which tasks of Phase $1 ended up not completed — the failed one plus any later ones left undelegated under the direction I give — and surface that list to me alongside the root cause. Those tasks are **deferred, not dropped**: `/review-phase` logs them in `docs/$2/feedback-log.md` under "Deferred issues" exactly like ones I decline to resolve (`phase-lifecycle` part C, point 4 — it already treats a skip after a FAIL as a deferred issue, a real finding, not a speculative risk), and they resurface as a heads-up at the start of later phases.
