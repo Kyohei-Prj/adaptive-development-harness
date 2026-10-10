@@ -1,1 +1,4 @@
 /.serena/
+.worktrees/
+.scratch/
+**/autorun.log
