@@ -23,7 +23,7 @@ permission:
     "*git clean -f*": deny
     "*push --force*": deny
     "*push -f *": deny
-    "*git branch -D*": deny
+    "*branch -D*": deny
   webfetch: allow
   task: deny
 ---
