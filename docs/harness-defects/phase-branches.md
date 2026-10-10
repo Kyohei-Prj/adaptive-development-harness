@@ -9,3 +9,4 @@ reads this for its diff baseline — never inferred from naming patterns.
 | 2 | feature/harness-defects-phase-2 | feature/harness-defects-phase-1 |
 | 3 | feature/harness-defects-phase-3 | feature/harness-defects-phase-2 |
 | 4 | feature/harness-defects-phase-4 | feature/harness-defects-phase-3 |
+| 5 | feature/harness-defects-phase-5 | feature/harness-defects-phase-4 |

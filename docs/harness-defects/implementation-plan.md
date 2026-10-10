@@ -170,14 +170,14 @@ one unit of work makes cross-references and the two top-level docs describe
 the shipped harness as a whole — the per-phase doc touches can't catch
 whole-slug drift.
 **Tasks:**
-- [ ] Task 5.1: lead.md stale pointer — worktree mechanics pointer targets
+- [x] Task 5.1: lead.md stale pointer — worktree mechanics pointer targets
       the phase-lifecycle skill, not command files. (acceptance: pointer
       corrected; no other pointer regressions) [type: smoke]
-- [ ] Task 5.2: README Troubleshooting — `git add -A` recovery step
+- [x] Task 5.2: README Troubleshooting — `git add -A` recovery step
       rewritten for the new invariant (recovery now: author-agent re-commits
       missed files; lead's docs-only commit is redone with
       `git add docs/<slug>/`). (acceptance: recovery text matches FR1–FR3) [type: smoke]
-- [ ] Task 5.3: Docs follow-through — sweep README + AGENTS.md against every
+- [x] Task 5.3: Docs follow-through — sweep README + AGENTS.md against every
       Phase 1–4 change (commit model, FAIL semantics, permission sets,
       .gitignore, shipped config); update claims to shipped reality. Four
       items the sweep would otherwise chase were already fixed in-repo by the
