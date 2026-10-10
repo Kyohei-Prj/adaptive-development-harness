@@ -266,8 +266,127 @@ non-blocking, all resolved in-review.
   gained the AGENTS.md push-deny-sentence sweep item; Task 3.4 added
   (`[x]` `[type: smoke]`) recording the three in-review fixes
   (`62751d2`/`f984f7a`/`f3c2f31`), mirroring the Task 1.5/2.3 pattern;
-  Phase 3 Goal annotated.
+   Phase 3 Goal annotated.
 - architecture.md: none.
 - spec.md: none.
+
+---
+
+## 2026-10-10 — Phase 4 review — Shipped-state hygiene
+
+Reviewer verdict: **PASS** — 0 blocking, 5 non-blocking, **all 5 resolved in
+this pass — nothing deferred**. Diff base `feature/harness-defects-phase-3`
+(per `phase-branches.md`). All five Phase 4 tasks are `[type: smoke]`; the
+reviewer independently re-ran every acceptance check at HEAD — `git
+check-ignore` hits for all three patterns including
+`docs/_archive/x/autorun.log` and a root-level `autorun.log`;
+`grep -rn "<fill in" .opencode/` → 0 hits; the shipped JSON parses with
+top-level keys exactly `$schema` + `watcher` and `watcher.ignore`
+byte-identical; "OpenCode still starts" confirmed at config-parse level.
+Lead's `af68e02` touched only `implementation-plan.md` + `phase-branches.md`
+with explicit-path staging — 4th consecutive phase holding that invariant.
+
+**Issues found:**
+- [non-blocking] NB-1: `.opencode/commands/archive.md` step 4 contradicted
+  step 3 — Task 4.2 added a note to step 3 that gitignored files
+  (`autorun.log`) stay behind at the live path `docs/$1/`, so the directory
+  still exists on disk after `git mv`; step 4 still claimed "`docs/$1/` no
+  longer exists to stage anyway". The conclusion (no `git add` needed) was
+  right; the reason was false.
+- [non-blocking] NB-2: `.opencode/skills/coding-standards/SKILL.md:74-76`
+  cited `opencode.json`'s `formatter: true`, a key Task 4.5 removed from
+  shipped config (OpenCode's formatter is default-on, which is why the key
+  was redundant).
+- [non-blocking] NB-3: README "Directory Structure" (the copy step's
+  self-declared "full layout") listed neither root `.gitignore` nor
+  `.opencode/opencode.json`, even though this phase made both part of the
+  copy story; and the `.worktrees/`/`.scratch/` annotations plus the prose
+  paragraphs on parallel-worktrees and scratch-space still said "Add … to
+  your `.gitignore`" — advice the shipped `.gitignore` already satisfies.
+- [non-blocking] NB-4: README copy step implied copying the harness
+  `.gitignore` over an adopting project's own, which would clobber it.
+- [non-blocking] NB-5: phase-complete commit-message drift — `af68e02` read
+  `feat(harness-defects): phase 4 harness-defects complete` (slug duplicated
+  into the description) vs. `feat(harness-defects): phase <n> complete` in
+  Phases 2–3.
+- Testing compliance: PASS on all five `[type: smoke]` tasks — checks
+  re-derived independently at HEAD (verdict paragraph).
+- Invariant checks: phase-complete commit `af68e02` is docs-only
+  (`implementation-plan.md` + `phase-branches.md`) with explicit-path
+  staging — 4th consecutive phase the sweep invariant holds; the
+  commit-message template drifted (NB-5) and was pinned at source.
+- Diffstat re-check (reviewer checked because it looked alarming):
+  `.opencode/opencode.json` shows 0 insertions / 101 deletions but was
+  **trimmed, not deleted** — still tracked at HEAD, valid JSON, exactly
+  `$schema` + `watcher`. Consistent with FR10 and the README copy story.
+
+**Resolutions applied:**
+- `9c7abb6` (NB-1): archive.md step 4's reason restated on tracked-file /
+  stageability semantics — the no-`git add` conclusion holds because there
+  are no *tracked* files left to stage, not because the directory is gone.
+- `a9c6dc9` (NB-2): coding-standards SKILL.md now cites the default-on
+  formatter behavior instead of the removed `formatter:` key; the
+  convention's substance unchanged. `grep -rn "formatter:"` now matches
+  nothing outside `docs/`.
+- `3708c13` (NB-3): root `.gitignore` and `.opencode/opencode.json` added to
+  the Directory-Structure tree; the `.worktrees/`/`.scratch/` annotations and
+  both prose spots reworded from instruction to shipped fact.
+- `924c5a8` (NB-4): README copy step now says merge the three lines into an
+  existing `.gitignore`; copy-in only for a fresh repo.
+- `77e8ba9` (NB-5): canonical shape `feat(<slug>): phase <n> complete` pinned
+  in `phase-lifecycle/SKILL.md` part A (slug once, as the conventional-commit
+  scope, never repeated in the description). Root cause: the shape existed
+  only in the three command files (`implement-phase.md:19`,
+  `implement-phase-auto.md:17`, `autorun.md:22`) and was absent from the skill
+  that is the declared single source of truth for phase mechanics and already
+  discusses this same commit; the command files were intentionally left
+  untouched since their `$1`/`$2` forms are correct; `af68e02` left as
+  history.
+
+**Deferred issues (confirmed but not fixed this round):**
+- None — all five non-blocking findings were resolved in this review pass;
+  nothing was skipped, so nothing is deferred.
+
+**Risks for future phases:**
+- R-1 disposition: **PERMANENTLY CLOSED** — closed by `4e5d440` (Task 4.1,
+  the phase's first commit, exactly as the Phase 3 entry decided). The
+  `**/autorun.log` ignore pattern makes `git add -A`-style sweeps
+  structurally unable to pick the log up again, so the specific-file-staging
+  mandate no longer needs to be carried as live context into Phase 5 or
+  `/finalize`; supersedes the still-open R-1 wording in the Phase 3 entry.
+- R-5 (slug 2 / FR10 interaction): `docs/harness-streamlining/architecture.md:21`
+  plans to make the shipped `opencode.json` the "single home of the shared
+  denylist", i.e. deliberately breaks "exactly two keys" and the README
+  sentence this phase just fixed. Slug 2 must amend that README sentence and
+  its own "docs' file-count claims match reality" acceptance check in the
+  same change, or it re-opens the contradiction Phase 4 closed.
+- R-6 (post-archive residue): by Task 4.2's design, a live `docs/<slug>/`
+  containing only `autorun.log` lingers after `/archive`. The leave-behind
+  note explains it to the *archiving agent*, not to the next reader — a
+  later `/grill`/`/plan` session scanning `docs/` could still read that
+  residue directory as active. Watch whether it bites when this slug itself
+  is archived.
+- R-7 (`autorun.log` never rotates): correctly ignored now, but ~1.26 MB and
+  append-only. Harmless to git, a nuisance for grepping. Rotation/truncation
+  convention belongs to a later slug, not this one.
+
+**Doc changes applied:**
+- implementation-plan.md: Task 5.3 annotated — the Phase 4 review pass
+  already fixed in-repo four of the items its sweep would otherwise look for
+  (archive.md step-4 reason / NB-1, coding-standards `formatter:` pointer /
+  NB-2, README full-layout tree + the obsolete "add to your `.gitignore`"
+  advice / NB-3, `.gitignore` copy-vs-merge wording / NB-4), rephrased so 5.3
+  verifies rather than redoes them; its Phase-3 carry (AGENTS.md
+  destructive-command-guardrails sentence under-describing `lead`'s push
+  denies) stays owned by 5.3. Task 4.5 annotated — also deleted the README
+  sentence "The default config in this repo has it on" (lead-sanctioned
+  in-run scope extension, previously recorded only in the commit body),
+  matching how Tasks 1.5/2.3/3.4 record in-run extras. Task 4.1 annotated —
+  executed first in the phase per the Phase 3 R-1 decision, closing the sweep
+  window before any later phase commit could sweep.
+- architecture.md: none — reviewer confirmed it already describes the shipped
+  end-state accurately.
+- spec.md: none — reviewer confirmed it already describes the shipped
+  end-state accurately.
 
 ---

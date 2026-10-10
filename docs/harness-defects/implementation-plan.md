@@ -135,7 +135,10 @@ phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
       already merged at review time; Task 4.1 executes first in Phase 4;
       until it lands, every lead docs commit (implementation AND review
       stage) must stage specific files, never a bare
-      `git add docs/harness-defects/`). (acceptance:
+      `git add docs/harness-defects/`). Executed first in Phase 4 as decided
+      (`4e5d440`, the phase's first commit), closing the sweep window before
+      any later phase commit could sweep — R-1 now permanently closed (see
+      feedback-log). (acceptance:
       `git check-ignore -v` hits all three, including
       `docs/_archive/x/autorun.log`) [type: smoke]
 - [x] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
@@ -152,8 +155,11 @@ phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
       `watcher.ignore` entries only; README documents that the author moves
       personal lsp/mcp/provider/compaction entries to global config
       manually (documentation of a manual step — no agent touches
-      `~/.config`). (acceptance: shipped JSON has exactly the two keys;
-      OpenCode still starts in this repo; README note present) [type: smoke]
+      `~/.config`). In-run scope extension (lead-sanctioned): also deleted
+      the README sentence "The default config in this repo has it on" —
+      previously recorded only in the commit body. (acceptance: shipped JSON
+      has exactly the two keys; OpenCode still starts in this repo; README
+      note present) [type: smoke]
 
 Blocking: independent content-wise; after Phase 1 so `.gitignore` rationale
 can reference the new worktree flow.
@@ -173,7 +179,14 @@ whole-slug drift.
       `git add docs/<slug>/`). (acceptance: recovery text matches FR1–FR3) [type: smoke]
 - [ ] Task 5.3: Docs follow-through — sweep README + AGENTS.md against every
       Phase 1–4 change (commit model, FAIL semantics, permission sets,
-      .gitignore, shipped config); update claims to shipped reality. Carry
+      .gitignore, shipped config); update claims to shipped reality. Four
+      items the sweep would otherwise chase were already fixed in-repo by the
+      Phase 4 review pass — verify, do not redo: archive.md step-4 reason
+      (NB-1 `9c7abb6`), coding-standards `formatter:` pointer (NB-2
+      `a9c6dc9`), README full-layout tree + the now-obsolete "add to your
+      `.gitignore`" advice (NB-3 `3708c13`), and the `.gitignore` copy-vs-merge
+      wording (NB-4 `924c5a8`); the AGENTS.md carry item below is NOT one of
+      them and remains owned by 5.3. Carry
       item from the Phase 3 review: the AGENTS.md "Destructive-command
       guardrails" sentence claiming "`phase-reviewer` and
       `architecture-reviewer` also deny `git commit`/ `git add`/ `git push`
