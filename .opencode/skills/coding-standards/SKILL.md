@@ -72,9 +72,8 @@ Signals a module has gone shallow and should be merged/consolidated:
 ## Style
 
 - Formatter is the source of truth, not personal preference. Whatever
-  `opencode.json`'s `formatter: true` wires up (Prettier for TS,
-  Black/Ruff for Python) — run it, don't hand-format, don't argue with it
-  in review.
+  OpenCode's default-on formatter wires up (Prettier for TS, Black/Ruff
+  for Python) — run it, don't hand-format, don't argue with it in review.
 - Imports: standard library → third-party → local, each group separated
   by a blank line, alphabetized within groups. Prefer configuring the
   linter/formatter (isort, eslint-plugin-import) to enforce this
