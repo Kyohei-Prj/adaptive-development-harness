@@ -127,7 +127,7 @@ Before delegating the first task of any phase, read `docs/<slug>/feedback-log.md
 
 When a phase's tasks include `[parallel-with: ...]` tags, that group must
 run in isolated git worktrees, not directly in the shared working tree —
-see `implement-phase.md` and `autorun.md` for the exact steps (worktree
+see the `phase-lifecycle` skill, part B, for the exact steps (worktree
 creation, per-task branch, sequential merge-back, conflict handling).
 Never delegate two `task-implementer` instances to edit the same working
 tree at the same time.
