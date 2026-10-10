@@ -128,9 +128,11 @@ User idea
 ```
 your-project/
 ├── AGENTS.md                            # Shared workflow rules, inherited by all agents
-├── .worktrees/                          # Ephemeral — per-task git worktrees for [parallel-with] groups (gitignore this)
-├── .scratch/                            # Ephemeral — agent scratch space, kept inside the project so it never needs the external_directory permission (gitignore this)
+├── .gitignore                           # Keeps the harness's ephemeral artifacts (.worktrees/, .scratch/, **/autorun.log) out of commits
+├── .worktrees/                          # Ephemeral — per-task git worktrees for [parallel-with] groups (gitignored — in the shipped `.gitignore`)
+├── .scratch/                            # Ephemeral — agent scratch space, kept inside the project so it never needs the external_directory permission (gitignored — in the shipped `.gitignore`)
 ├── .opencode/
+│   ├── opencode.json                    # Shipped config carries only `$schema` + `watcher.ignore` — anything machine-specific belongs in your global OpenCode config
 │   ├── agents/
 │   │   ├── grill.md                     # Primary — Grill (alignment) stage
 │   │   ├── planner.md                   # Primary — Planning stage
@@ -641,9 +643,9 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Logged risks and deferred issues resurface automatically, but only as a heads-up.** At the start of each phase, `lead` checks `feedback-log.md` for relevant open risks and deferred issues and mentions them before delegating tasks. It won't act on them itself — if one needs real work, add it as a tagged task in `implementation-plan.md` (the reviewer's "suggested doc edits" often do this for you).
 
-**Parallel tasks run in worktrees, not the shared tree.** `[parallel-with: X]` tags trigger isolated git worktrees under `.worktrees/`, one branch per task, merged back sequentially — never in parallel. Add `.worktrees/` to your `.gitignore`; it's already excluded from the file watcher in `opencode.json`. If a merge conflict happens during the merge-back, `lead` stops and hands it to you rather than resolving it itself.
+**Parallel tasks run in worktrees, not the shared tree.** `[parallel-with: X]` tags trigger isolated git worktrees under `.worktrees/`, one branch per task, merged back sequentially — never in parallel. The shipped `.gitignore` already ignores it (for a project adopting the harness into an existing repo, it's one of the three lines to merge in); it's also already excluded from the file watcher in `opencode.json`. If a merge conflict happens during the merge-back, `lead` stops and hands it to you rather than resolving it itself.
 
-**Agents stay inside the project directory, on purpose.** `lead`, `task-implementer`, and `issue-resolver` are instructed to never `cd` outside the repo — any exploratory or scratch work (testing a package install, a throwaway build) goes in `.scratch/` at the project root instead. This isn't just tidiness: OpenCode gates file operations outside the project root behind a separate `external_directory` permission that no agent here has, and that gate auto-rejects with no one around to approve it in a headless run. Add `.scratch/` to your `.gitignore`; it's already excluded from the file watcher.
+**Agents stay inside the project directory, on purpose.** `lead`, `task-implementer`, and `issue-resolver` are instructed to never `cd` outside the repo — any exploratory or scratch work (testing a package install, a throwaway build) goes in `.scratch/` at the project root instead. This isn't just tidiness: OpenCode gates file operations outside the project root behind a separate `external_directory` permission that no agent here has, and that gate auto-rejects with no one around to approve it in a headless run. The shipped `.gitignore` already ignores it (for a project adopting the harness into an existing repo, it's one of the three lines to merge in); it's also already excluded from the file watcher.
 
 **The destructive-command denylist is intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, and `git clean -f` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
