@@ -12,7 +12,8 @@ check too. Phases run strictly in numeric order.
 composes it: *code commits are created by the agent that wrote the code;
 lead commits only `docs/<slug>/`; worktree removal is git-verified.* After
 this phase, reading + exercising the workflow shows no sweepable surface and
-no silently-lost worktree work. (Closes defects: worktree silent work loss,
+no silently-lost worktree work (sweep closure completed by Task 1.5, added
+during Phase 1 review). (Closes defects: worktree silent work loss,
 `git add -A` sweep.)
 **Tasks:**
 - [x] Task 1.1: phase-lifecycle SKILL.md part B — instruct the isolated
@@ -41,7 +42,14 @@ no silently-lost worktree work. (Closes defects: worktree silent work loss,
       verification passes and removal succeeds; run lead's new commit shape
       with a stray untracked file under `.scratch/` and confirm it lands in
       no commit. Evidence = commands + output in the task report. (acceptance:
-      all three assertions pass; `.scratch/wt-sim/` cleaned up) [type: smoke]
+       all three assertions pass; `.scratch/wt-sim/` cleaned up) [type: smoke]
+- [x] Task 1.5: command-file commit steps → docs-only shape: replace the 8
+      `git add -A` sites in `.opencode/commands/` lead commands with
+      `git add docs/<slug>/` (archive.md: bare `git commit` after
+      `git mv`); generalize lead.md's commit-points enumeration to four.
+      Found by Phase 1 review; resolved in-review `0fe836a`. (acceptance:
+      `grep -rn "git add -A" .opencode/` → zero hits; lead.md enumerates
+      four commit points incl. the archive commit) [type: smoke]
 
 Blocking: 1.1 ↔ 1.3 textually coupled (worker commits vs lead verifies);
 do 1.4 last.
@@ -98,8 +106,13 @@ config contains no personal settings, no live template placeholder ships.
 phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
 **Tasks:**
 - [ ] Task 4.1: .gitignore — add `.worktrees/`, `.scratch/`,
-      `**/autorun.log`. (acceptance: `git check-ignore -v` hits all three,
-      including `docs/_archive/x/autorun.log`) [type: smoke]
+      `**/autorun.log` (this task also closes the `autorun.log`-sweep
+      window that opens at Phase 1 and is live through Phases 2–3: lead's
+      docs-only `git add docs/<slug>/` commit stages the live log until
+      this lands — see feedback-log risk; reconsider this task's sequencing
+      if the automated run keeps logging to this path). (acceptance:
+      `git check-ignore -v` hits all three, including
+      `docs/_archive/x/autorun.log`) [type: smoke]
 - [ ] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
       deliberately leaves `autorun.log` behind (it's gitignored; the
       historical log stays at its live path or is discarded, by design).
