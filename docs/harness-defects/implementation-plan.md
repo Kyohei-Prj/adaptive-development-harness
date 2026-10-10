@@ -62,12 +62,12 @@ asks the user for direction instead of halting — and skipped tasks become
 deferred issues review carries in the feedback-log. (Closes defect:
 undefined interactive FAIL flow.)
 **Tasks:**
-- [ ] Task 2.1: implement-phase.md — FAIL semantics mirroring
+- [x] Task 2.1: implement-phase.md — FAIL semantics mirroring
       implement-phase-auto.md: on FAIL, stop delegating, no commit, surface
       root cause, ask direction. (acceptance: the two command files' FAIL
       sections are semantically identical except stop→ask; no other
       behavioral drift) [type: smoke]
-- [ ] Task 2.2: Skips become deferred issues — instruct lead to record
+- [x] Task 2.2: Skips become deferred issues — instruct lead to record
       tasks skipped after a FAIL so `/review-phase` logs them in
       feedback-log.md like declined issues. (acceptance: carry-over
       instruction present in implement-phase.md and consistent with
