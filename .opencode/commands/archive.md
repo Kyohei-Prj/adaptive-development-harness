@@ -10,7 +10,7 @@ Steps:
 1. Confirm with me that `$1` has been merged to main, if it isn't obvious from `git log main` containing the slug's phase commits.
 2. `mkdir -p docs/_archive` if it doesn't exist.
 3. `git mv docs/$1 docs/_archive/$1` — gitignored files like `autorun.log` aren't tracked, so `git mv` deliberately leaves them behind: the historical log stays at its live path `docs/$1/` or is discarded with it, by design.
-4. Commit: `git commit -m "chore($1): archive planning docs after merge"` — the `git mv` in step 3 already staged the move, so no `git add` is needed (and `docs/$1/` no longer exists to stage anyway).
+4. Commit: `git commit -m "chore($1): archive planning docs after merge"` — the `git mv` in step 3 already staged the move, so no `git add` is needed (and no *tracked* files remain under `docs/$1/` anyway — anything still there is gitignored, hence unstageable).
 5. Confirm to me that it's done, and note that `docs/_archive/$1/` remains available for reference (git history and grep both still find it) — it's just out of the live tree so a future `/grill` or `/plan` session for unrelated work won't stumble on it and treat it as current.
 
 Do not delete the docs outright — archive, don't destroy. If I explicitly ask you to delete instead of archive, confirm that's really what I want before doing it.
