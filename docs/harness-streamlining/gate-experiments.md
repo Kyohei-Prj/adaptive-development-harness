@@ -207,7 +207,9 @@ retained per-agent shape shown to BLOCK it (C2).
   occurrences before fixture creation).
 
 **Commands (OpenCode v1.18.35 — note Experiments A/B ran on v1.18.34,
-disproof reproduces on both; cwd `.scratch/gate-c/`; model
+disproof first observed there during Task 1.3's pre-edit probe and
+reproduced on the installed v1.18.35, transcript retention per the
+provenance note below; cwd `.scratch/gate-c/`; model
 `llama.cpp/qwen3.6-27b-mtp`):**
 - `opencode debug agent c1` / `opencode debug agent c2` — resolution
   sanity check (entry presence/order).
@@ -215,6 +217,12 @@ disproof reproduces on both; cwd `.scratch/gate-c/`; model
   bash command once: touch gate-c-probe-zx9q-c1.marker"` — DECISIVE step
   (execution, not entry inspection); same for c2 with
   `gate-c-probe-zx9q-c2.marker`.
+
+**Provenance note:** the first disproof was observed under v1.18.34 during
+Task 1.3's pre-edit probe, but that transcript was not retained — it lived
+in an ephemeral task report whose only surviving copy, `autorun.log`, is
+git-ignored; the durable reproduction recorded in this document ran on
+v1.18.35, the installed version.
 
 **Evidence:**
 
