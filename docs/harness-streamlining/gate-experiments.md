@@ -73,7 +73,8 @@ layer only.
 loaded as a real config layer in a standalone third-party project, so
 hoisting the shared denylist into its top-level `permission.bash` is
 viable — proceed with the hoist (Experiment B's verdict still gates it
-independently).
+independently). *(superseded — the hoist was later blocked by Experiment B's
+effective-action reclassification; see the Decision section below.)*
 
 ## Experiment B
 
@@ -154,7 +155,7 @@ ruling out "the deny was never there" as an alternative B2 explanation):
 }
 ```
 
-**Verdict — B1 (precedence): PASS. B2 (merge/union): PASS. Overall: PASS.**
+**Verdict — B1 (precedence): PASS. B2 (merge/union): PASS. Overall: PASS.** → **reclassified FAIL** — see the correction below.
 
 **Implication for the hoist (as recorded at the time — see correction
 below):** the shared denylist can live once in the shipped config's
