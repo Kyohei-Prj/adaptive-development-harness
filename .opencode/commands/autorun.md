@@ -19,7 +19,7 @@ Repeat steps 2–9 for EACH phase N (in ascending order):
 
 5. Compile the phase summary from each task-implementer's summary block:
    - Task → Approach → Test result → Deviations/risks
-   Then commit (including `phase-branches.md`): `git add -A && git commit -m "feat($1): phase N complete"`.
+   Then commit the doc changes (including `phase-branches.md`): `git add docs/$1/ && git commit -m "feat($1): phase N complete"`.
 
 6. Delegate to `phase-reviewer` to review Phase N changes, check testing compliance, and classify all issues as blocking or non-blocking.
 
@@ -27,7 +27,7 @@ Repeat steps 2–9 for EACH phase N (in ascending order):
 
 8. Delegate to `doc-updater` to apply all suggested doc edits and to append a dated entry to feedback-log.md covering the original findings, any deferred issues, risks for future phases, and all resolutions applied.
 
-9. Commit all fixes and doc updates: `git add -A && git commit -m "review($1): phase N fixes and doc updates"`.
+9. Commit the doc updates: `git add docs/$1/ && git commit -m "review($1): phase N fixes and doc updates"`.
 
 10. Report a progress summary for phase N to the user:
     - Implementation: task results (Approach → Test result → Deviations)

@@ -19,7 +19,7 @@ Steps:
 3. Resolve ALL blocking issues automatically — do not ask which to resolve. Issue-resolution delegation, see `phase-lifecycle` skill, part C. Non-blocking findings and risks for future phases are not auto-fixed here; they're logged in step 4 only, same as a normal review.
    **If any issue-resolver reports FAIL: stop. Do not attempt further fixes.** Treat it as a deferred issue (logged in step 4) only if it's a non-blocking issue that somehow reached this step; a FAIL on an actual blocking issue means the branch is not merge-ready — report it plainly rather than declaring success.
 4. Delegate to `doc-updater` to append a final feedback-log.md entry noting this was a finalize check across all phases: findings, resolutions applied, any deferred issues, and non-blocking findings/risks (logged, not fixed).
-5. If everything above succeeded and there were actual changes to commit: `git add -A && git commit -m "finalize($1): pre-merge check"`. If the finalize check found nothing to fix, skip the commit.
+5. If everything above succeeded and there were actual doc changes to commit: `git add docs/$1/ && git commit -m "finalize($1): pre-merge check"`. If the finalize check found nothing to fix, skip the commit.
 6. Produce the final report (format below). If step 3 hit a FAIL on a blocking issue, the branch is NOT ready to merge — say so explicitly rather than defaulting to a generic "ready" message.
 
 ## Final report format

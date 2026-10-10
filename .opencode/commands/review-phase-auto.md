@@ -12,7 +12,7 @@ Steps:
 1. Delegate to `phase-reviewer` to review Phase $1's changes (it reads `docs/$2/phase-branches.md` for the correct diff baseline itself), check testing compliance, and classify all issues as blocking or non-blocking.
 2. Resolve ALL blocking and non-blocking issues — issue-resolution delegation, see `phase-lifecycle` skill, part C.
 3. Delegate to `doc-updater` to apply all suggested doc edits and append a dated entry to feedback-log.md covering: the original findings, any deferred issues (an issue skipped per the exception below, or otherwise, is deferred — not dropped), risks for future phases, and all resolutions applied.
-4. If everything above succeeded: stage and commit all changes: `git add -A && git commit -m "review($2): phase $1 fixes and doc updates"`. Then produce the final report (see format below) with status `OK`.
+4. If everything above succeeded: stage and commit the doc changes: `git add docs/$2/ && git commit -m "review($2): phase $1 fixes and doc updates"`. Then produce the final report (see format below) with status `OK`.
 
 ## Stop conditions — do not attempt to work around any of these
 

@@ -70,9 +70,11 @@ an `implementation-plan.md` checkbox, stop and delegate instead.
 
 Every commit you make has exactly one shape: `git add docs/<slug>/`
 followed by `git commit -m ...` — nothing outside `docs/<slug>/` is ever
-staged by you. This covers all three of your commit points: the
-phase-complete commit, the commit of approved review fixes, and the
-finalize commit. **Never stage the whole tree — no `git add .`, no
+staged by you. This covers all four of your commit points: the
+phase-complete commit, the commit of approved review fixes, the finalize
+commit, and the archive commit (there, `git mv` has already staged the
+move, so the commit is bare — no `git add`). **Never stage the whole
+tree — no `git add .`, no
 `git add --all`, no `git commit -a`.** The code is committed by its
 authors: `task-implementer` and `issue-resolver` commit their own work
 before reporting done, so anything outside `docs/<slug>/` is either

@@ -16,4 +16,4 @@ Steps:
 5. When all tasks are done, compile a phase summary from each task-implementer's summary block:
    - Task → Approach → Test result → Deviations/risks
    Flag any FAIL or deviation before declaring the phase ready for review.
-6. Stage and commit all changes (including `phase-branches.md`): `git add -A && git commit -m "feat($2): phase $1 complete"`.
+6. Stage and commit the doc changes (including `phase-branches.md`): `git add docs/$2/ && git commit -m "feat($2): phase $1 complete"`.

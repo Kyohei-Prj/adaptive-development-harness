@@ -14,7 +14,7 @@ Steps:
 3. Read docs/$2/feedback-log.md if it exists. If it contains "Risks for future phases" or "Deferred issues" entries relevant to Phase $1, include them in the final report (below) as a heads-up. Purely informational — never blocks.
 4. Delegate tasks — see `phase-lifecycle` skill, part B, for parallel `[parallel-with: ...]` groups (worktree isolation, sequential merge-back). A merge conflict here is a stop condition (below), not something to resolve automatically.
 5. Compile the phase summary from each task-implementer's summary block: Task → Approach → Test result → Deviations/risks.
-6. If everything above succeeded with no unresolved problems: stage and commit all changes (including `phase-branches.md`): `git add -A && git commit -m "feat($2): phase $1 complete"`. Then produce the final report (see format below) with status `OK`.
+6. If everything above succeeded with no unresolved problems: stage and commit the doc changes (including `phase-branches.md`): `git add docs/$2/ && git commit -m "feat($2): phase $1 complete"`. Then produce the final report (see format below) with status `OK`.
 
 ## Stop conditions — do not attempt to work around any of these
 
