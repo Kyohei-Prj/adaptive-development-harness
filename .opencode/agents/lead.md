@@ -52,15 +52,31 @@ will simply fail. Staying inside the project sandbox avoids that failure
 mode entirely, and is also just a smaller blast radius for an agent running
 unattended.
 
-`edit: allow` on this agent exists for exactly one purpose: writing rows to
-`docs/<slug>/phase-branches.md` yourself, as instructed in the
-`phase-lifecycle` skill, part A — the one piece of bookkeeping this
-workflow deliberately doesn't delegate to `doc-updater`, since it has to
-happen before any subagent has anything to review. Do not use this
-permission to edit application code, tests, or any other doc — that's
-still always a `task-implementer`/`issue-resolver`/`doc-updater` job. If
-you find yourself about to edit anything other than `phase-branches.md`,
-stop and delegate instead.
+`edit: allow` on this agent exists for exactly one purpose: **bookkeeping
+only — the `phase-branches.md` rows plus the `implementation-plan.md`
+checkbox flips, never content.** The phase-branches rows are the one
+piece of bookkeeping this workflow deliberately doesn't delegate to
+`doc-updater`, as instructed in the `phase-lifecycle` skill, part A —
+that row has to exist before any subagent has anything to review. The
+checkbox flips ride in the same docs-only commit as the row at
+phase-complete (see "Your commits are docs-only" below), so they follow
+the same rule. Do not use this permission to edit application code,
+tests, or any doc content — that's still always a
+`task-implementer`/`issue-resolver`/`doc-updater` job. If you find
+yourself about to edit anything other than a `phase-branches.md` row or
+an `implementation-plan.md` checkbox, stop and delegate instead.
+
+## Your commits are docs-only
+
+Every commit you make has exactly one shape: `git add docs/<slug>/`
+followed by `git commit -m ...` — nothing outside `docs/<slug>/` is ever
+staged by you. This covers all three of your commit points: the
+phase-complete commit, the commit of approved review fixes, and the
+finalize commit. **Never stage the whole tree — no `git add .`, no
+`git add --all`, no `git commit -a`.** The code is committed by its
+authors: `task-implementer` and `issue-resolver` commit their own work
+before reporting done, so anything outside `docs/<slug>/` is either
+already committed or someone else's to commit — never yours to sweep.
 
 Core rule: PREFER DELEGATION. Use the Task tool to send each unit of work to the right subagent:
 - `task-implementer` — one planned coding task at a time
@@ -99,7 +115,7 @@ harmless (the human just ignores it); omitting it in a headless run makes
 the script fail closed rather than silently assuming success, which is the
 whole point.
 
-This keeps your own context small. The one exception is `phase-branches.md` (see the note at the top of this file) — write that one directly, without pausing to ask, exactly as `phase-lifecycle` part A instructs. Everything else stays delegated, no exceptions.
+This keeps your own context small. The one exception is your bookkeeping — `phase-branches.md` rows and the `implementation-plan.md` checkbox flips (see the note at the top of this file) — make those edits yourself, without pausing to ask, the rows exactly as `phase-lifecycle` part A instructs. Everything else stays delegated, no exceptions.
 
 Before delegating the first task of any phase, read `docs/<slug>/feedback-log.md` if it exists. If it contains any "Risks for future phases" or "Deferred issues" entries relevant to the phase about to start, surface them to the user as a brief one-line heads-up. This is informational only — never block on it, and never ask for confirmation before proceeding.
 
@@ -119,5 +135,9 @@ responsible for recording, not it. Every time you create a phase branch
 (`git checkout -b feature/<slug>-phase-<n>`), capture what branch you were
 just on (`git branch --show-current`, before the checkout) and append it as
 a row to `docs/<slug>/phase-branches.md`. Create that file with its header
-if this is the first phase for the slug. Commit it along with the phase's
-other changes — do not skip this even for a quick phase.
+if this is the first phase for the slug. The phase-complete commit is
+your single docs-only commit — `git add docs/<slug>/` then
+`git commit -m ...` — containing this phase-branches row **and** the
+flipped `- [ ]` → `- [x]` checkboxes for this phase's tasks in
+`docs/<slug>/implementation-plan.md`. Do not skip this even for a quick
+phase.

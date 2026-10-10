@@ -44,7 +44,11 @@ For each parallel group (2+ tasks tagged parallel with each other):
 2. Delegate each task to `task-implementer` via the Task tool, telling it
    explicitly: "Your working directory for this task is
    `.worktrees/<slug>-<task-id>` — cd there first, and don't touch files
-   outside it."
+   outside it. Before you report done, `git add <explicit paths>` and
+   `git commit` your work on this task branch — **never stage the whole
+   tree**: no `git add .`, no `git add --all`, no `git commit -a`; stage
+   only the paths you changed. Work you left
+   uncommitted is not merged — it is destroyed at cleanup."
 3. Once **all** tasks in the group report done, merge each task branch
    back into the phase branch **sequentially, one at a time — never in
    parallel**: `git merge task/<slug>-<task-id>`.
@@ -53,7 +57,15 @@ For each parallel group (2+ tasks tagged parallel with each other):
    the conflict and wait for direction. In a headless command, this is a
    `NEEDS_HUMAN` stop condition (see the `phase-lifecycle` status-trailer
    section, part D) — the run cannot continue unattended past a conflict.
-4. After a successful merge, clean up:
+4. After a successful merge, verify before cleanup — both checks must
+   pass: `git status --porcelain` run in that worktree is empty (the
+   worker committed everything) and
+   `git merge-base --is-ancestor task/<slug>-<task-id> feature/<slug>-phase-N`
+   succeeds (the task's commits actually landed in the phase branch).
+   **If either check fails: stop and report — never
+   `git worktree remove --force`** and never `git branch -D` to paper over
+   a failure; they silently destroy exactly the work the failed check is
+   flagging. Only once both pass, clean up:
    `git worktree remove .worktrees/<slug>-<task-id>` and
    `git branch -d task/<slug>-<task-id>`.
 

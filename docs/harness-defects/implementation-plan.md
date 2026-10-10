@@ -15,7 +15,7 @@ this phase, reading + exercising the workflow shows no sweepable surface and
 no silently-lost worktree work. (Closes defects: worktree silent work loss,
 `git add -A` sweep.)
 **Tasks:**
-- [ ] Task 1.1: phase-lifecycle SKILL.md part B — instruct the isolated
+- [x] Task 1.1: phase-lifecycle SKILL.md part B — instruct the isolated
       worker to commit on its task branch before reporting done; add lead's
       pre-removal verification: `git status --porcelain` empty AND
       `git merge-base --is-ancestor <task-branch> <phase-branch>`; any
@@ -23,19 +23,19 @@ no silently-lost worktree work. (Closes defects: worktree silent work loss,
       summary format unchanged. (acceptance: part B contains both git
       commands and the no-`--force` rule; worker-commit instruction present;
       diff touches only the worktree section) [type: smoke]
-- [ ] Task 1.2: task-implementer.md + issue-resolver.md — end-of-task step:
+- [x] Task 1.2: task-implementer.md + issue-resolver.md — end-of-task step:
       commit your own work on the current branch with an explicit file list,
       never `git add -A` / any `-A`. (acceptance: both bodies state the
       commit-your-work step with explicit-path requirement; no `-A` anywhere
       in either file) [type: smoke]
-- [ ] Task 1.3: lead.md — all commit points (phase-complete, review,
+- [x] Task 1.3: lead.md — all commit points (phase-complete, review,
       finalize) changed to `git add docs/<slug>/` only; phase-complete also
       flips the phase's checkboxes in implementation-plan.md and records the
       phase-branches row within that same docs-only commit; add the explicit
       edit exception: "bookkeeping only — phase-branches rows + checkboxes,
       never content". (acceptance: no lead commit instruction uses anything
       but `docs/<slug>/`; exception wording present; `-A` gone from lead.md) [type: smoke]
-- [ ] Task 1.4: Pure-git simulation in `.scratch/wt-sim/` (throwaway repo,
+- [x] Task 1.4: Pure-git simulation in `.scratch/wt-sim/` (throwaway repo,
       never committed): follow the edited part B literally — dirty worktree
       → verification refuses removal and stops; committed+merged branch →
       verification passes and removal succeeds; run lead's new commit shape

@@ -93,6 +93,17 @@ State your classification in one line before proceeding:
 
 ---
 
+## Commit your work before reporting done
+
+When your tests are green or your smoke check passes, commit before
+reporting done: stage exactly the paths you changed — `git add <path> ...`
+— and `git commit` on the current branch (on a worktree run, your task
+branch). Never stage the whole tree — no `git add .`, no `git add --all`,
+no `git commit -a`. The lead commits only `docs/<slug>/` and never sweeps
+your files, so anything you leave uncommitted is committed by no one.
+
+---
+
 ## Summary (end every response with this block)
 
 ```

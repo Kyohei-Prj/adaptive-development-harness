@@ -81,6 +81,14 @@ State your classification in one line before proceeding:
    confirm the fix holds.
 3. If still failing after one fix attempt, stop and report.
 
+## Commit your fix before reporting done
+
+When the fix is verified, commit it before reporting done: stage exactly
+the paths you changed — `git add <path> ...` — and `git commit` on the
+current branch, one commit per resolved issue. Never stage the whole
+tree — no `git add .`, no `git add --all`, no `git commit -a`. The lead
+commits only `docs/<slug>/` and never sweeps your files.
+
 ## Summary (end every response with this block)
 
 ```
