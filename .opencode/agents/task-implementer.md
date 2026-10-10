@@ -14,6 +14,7 @@ permission:
     "git checkout -- .*": deny
     "git checkout --force*": deny
     "git clean -f*": deny
+    "git branch -D*": deny
     "*rm -rf*": deny
     "*rm -fr*": deny
     "*reset --hard*": deny
@@ -22,6 +23,7 @@ permission:
     "*git clean -f*": deny
     "*push --force*": deny
     "*push -f *": deny
+    "*git branch -D*": deny
   webfetch: allow
   task: deny
 ---
