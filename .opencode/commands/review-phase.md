@@ -19,5 +19,5 @@ Steps:
 
 4. Once all confirmed issues are resolved (or none exist), ask me whether to apply the doc updates.
 
-5. If I confirm, delegate to `doc-updater` to update architecture.md, spec.md, and implementation-plan.md, and to append a dated entry to feedback-log.md that covers the original findings, any deferred issues, risks for future phases, and the resolutions applied.
+5. If I confirm, delegate to `doc-updater` to update architecture.md, spec.md, and implementation-plan.md, and to append a dated entry to feedback-log.md that covers the original findings, any tasks that implement-phase recorded as skipped after a stop, any deferred issues, risks for future phases, and the resolutions applied.
 6. After `doc-updater` completes, stage and commit the doc changes: `git add docs/$2/ && git commit -m "review($2): phase $1 fixes and doc updates"`.

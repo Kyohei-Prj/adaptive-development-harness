@@ -95,7 +95,8 @@ The mechanics are always the same regardless of confirmation policy:
    for a given caller).
 4. Any issue that ends up not fixed — whether declined by the user in an
    interactive command, or skipped after a FAIL in a headless one — is a
-   **deferred issue**, not a dropped one. It must be logged by
+   **deferred issue**, not a dropped one; likewise any implementation task
+   skipped after a FAIL in `implement-phase`. It must be logged by
    `doc-updater` in the same feedback-log.md entry as everything else, in
    its own "Deferred issues" section, distinct from "risks for future
    phases" (a deferred issue is a confirmed real finding against code that
