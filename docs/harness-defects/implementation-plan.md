@@ -193,9 +193,15 @@ whole-slug drift.
       outright" now under-describes `lead`, which since Phase 3 Task 3.1 +
       the review's anymatch follow-up denies plain AND compound `git push`
       too — update that sentence's scope. No length-diet or
-      restructuring here (slug 2's job). (acceptance: no
-      statement contradicts the shipped mechanics; spec acceptance list
-      re-verified end to end) [type: smoke]
+      restructuring here (slug 2's job). [Phase 5 review: sweep executed —
+      the four Phase-4 verify-don't-redo items confirmed in place, not
+      redone; the guardrails sentence + two README table cells (webfetch,
+      add-deny) corrected; one residual wording nuance (the AGENTS.md
+      "listed twice" claim) resolved in-review at `9b896a3`, its mechanics
+      half routed to the push-hardening cluster — see feedback-log Phase 5
+      entry.]
+      (acceptance: no statement contradicts the shipped mechanics; spec
+      acceptance list re-verified end to end) [type: smoke]
 
 Blocking: last phase of the slug.
 

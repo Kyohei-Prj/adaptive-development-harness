@@ -390,3 +390,102 @@ with explicit-path staging — 4th consecutive phase holding that invariant.
   end-state accurately.
 
 ---
+
+## 2026-10-10 — Phase 5 review — Consistency pass + docs follow-through
+
+Reviewer verdict: **PASS** — 0 blocking, 1 non-blocking, resolved in this
+pass. Diff base `feature/harness-defects-phase-4` (per `phase-branches.md`);
+4 commits, +46/−36 across 5 files. All three `[type: smoke]` tasks
+re-derived independently at HEAD: 5.1 PASS (lead.md:130 pointer now resolves
+to phase-lifecycle part B; the old command-file pairing is 0 hits repo-wide);
+5.2 PASS (README:672 recovery = author-agent re-commit +
+`git add docs/<slug>/` redo, no `add -A` left anywhere in README/AGENTS);
+5.3 PASS (guardrails sentence verified against all 8 agent frontmatters; the
+four "verify, don't redo" Phase-4 items confirmed in place, not redone —
+`9c7abb6`/`a9c6dc9`/`3708c13`/`924c5a8`). Spec acceptance list re-verified
+end to end: FR1–FR10 all confirmed at HEAD
+(grep/glob/check-ignore/JSON-parse checks); two acceptance criteria are
+legitimately PENDING rather than failing — "each phase passes /review-phase"
+(completed by this review) and "/finalize clean" — both spec checkboxes get
+ticked at `/finalize`, not before.
+
+**Issues found:**
+- [non-blocking] NB-1: `AGENTS.md:78-85` — the "Each denied pattern is
+  listed twice" claim is not literally true for the
+  `task-implementer`/`issue-resolver` push family: `git push origin +*` has
+  no anymatch counterpart and `*push -f *` demands a trailing space, so
+  compound variants (`cd x && git push origin +main`) evade the pair's
+  denylist; `lead` unaffected (`git push*` + `*git push*` both present).
+  Pre-existing paragraph, not introduced by Phase 5 — surfaced by the
+  whole-slug sweep.
+- Testing compliance: PASS on all three `[type: smoke]` tasks — every
+  acceptance check re-derived independently at HEAD (verdict paragraph).
+- Invariant checks: phase-complete commit `507c208` is docs-only
+  (`implementation-plan.md` 3 checkbox flips + `phase-branches.md` row 5)
+  and its message `feat(harness-defects): phase 5 complete` matches the
+  template pinned in part A — 5th consecutive phase holding the
+  authorship invariant; task commits `dd8b97f`/`bc3b8a8`/`240412a` each
+  scoped-path by their author. Note: this is also the first review where
+  lead's literal `git add docs/harness-defects/` staging is safe — the
+  `**/autorun.log` ignore (`4e5d440`, Task 4.1) means the live log can no
+  longer be swept; Phase 4's R-1 "PERMANENTLY CLOSED" disposition is
+  re-confirmed operationally.
+- Prior-risk verification (all closed/verified): Phase 2 R-2 stale pointer
+  CLOSED (5.1); Phase 2 R-3 twin FAIL-section parity VERIFIED byte-identical
+  across implement-phase.md:21-25 / implement-phase-auto.md:19-23, the
+  differences exactly the sanctioned set, twins untouched in this range;
+  Phase 2 R-4 deferral language CLOSED (AGENTS.md stage 3 + README:261 now
+  cover declines AND skipped-after-FAIL tasks, consistent with part C
+  point 4); Phase 3 carry — AGENTS.md push-deny sentence CLOSED (rewritten
+  AGENTS.md:64-72 matches lead.md frontmatter exactly; the sweep
+  additionally corrected two README table cells the old text contradicted —
+  the reviewers' `git add` deny, lead's `webfetch: allow`). Phase 2 NB-2
+  twin duplication: not re-raised (routed to `harness-streamlining`), sync
+  confirmed. Phase 3/4 residuals: prior disposition stands (see deferred
+  below).
+
+**Resolutions applied:**
+- `9b896a3` (NB-1): AGENTS.md dual-listing paragraph qualified — one 8-line
+  insertion spelling out the exact pair exception and marking the mechanics
+  fix (`"*git push*"` deny on the pair) as a queued decision deliberately
+  not taken in this slug (spec FR6 scope + prior routing). The agent
+  frontmatter was deliberately NOT touched — that mechanics change belongs
+  to the push-hardening decision below.
+
+**Deferred issues (confirmed but not fixed this round):**
+- **Push-hardening cluster — 3 logged candidates, now formally bundled as
+  ONE routed decision** (user / `harness-streamlining`; all three touch the
+  same 2 frontmatters, so resolve them together or not at all):
+  (a) [this review, NB-1 mechanics half] the pair has no `"*git push*"`
+  anymatch, so compound `git push origin +*` / trailing-`-f` variants evade;
+  (b) [Phase 3 R] the pair has no plain-push deny at all ("push is never an
+  agent operation" is only half-enforced there) — `*git push*` closes (a)
+  and (b) in one line; (c) [Phase 3 R] long-form
+  `git branch --delete --force` / `--delete -f` evades the `-D` deny in all
+  five files. NB-1's doc half (the AGENTS.md overclaim) is FIXED at
+  `9b896a3`; only the mechanics stay deferred.
+
+**Risks for future phases:**
+- R-5 carried from Phase 4 (`harness-streamlining` / FR10): making the
+  shipped `opencode.json` the denylist's "single home" deliberately breaks
+  "exactly two keys" + README:459 — that slug must amend both in one change.
+- R-6 carried (post-archive residue): this slug's own `/archive` is the
+  first real test — `docs/harness-defects/` will linger on disk containing
+  only the ignored `autorun.log`; watch whether a later `/grill`/`/plan`
+  session misreads it as active.
+- R-7 carried: `autorun.log` never rotates (append-only, ~1.26 MB) — later
+  slug.
+- Pending spec criteria: spec.md's acceptance list stays unticked until
+  `/finalize` re-verifies the two pending items ("each phase passes
+  /review-phase", "/finalize clean") and ticks them there.
+
+**Doc changes applied:**
+- implementation-plan.md: Task 5.3 annotated — sweep executed at the Phase 5
+  review (the four Phase-4 verify-don't-redo items confirmed, the guardrails
+  sentence + 2 README table cells corrected by the phase's own commits,
+  NB-1's dual-listing nuance resolved in-review at `9b896a3` with its
+  mechanics half routed into the push-hardening cluster).
+- architecture.md: none — L26 already matches shipped reality.
+- spec.md: none — tick acceptance items at `/finalize` only.
+
+---
