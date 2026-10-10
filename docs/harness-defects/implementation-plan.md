@@ -59,7 +59,8 @@ do 1.4 last.
 handles a failed task exactly like its `-auto` twin (stop delegating, commit
 nothing, surface root cause) with the single intentional difference — it
 asks the user for direction instead of halting — and skipped tasks become
-deferred issues review carries in the feedback-log. (Closes defect:
+deferred issues review carries in the feedback-log (receiver-half wiring
+completed by Task 2.3, added during Phase 2 review). (Closes defect:
 undefined interactive FAIL flow.)
 **Tasks:**
 - [x] Task 2.1: implement-phase.md — FAIL semantics mirroring
@@ -72,6 +73,13 @@ undefined interactive FAIL flow.)
       feedback-log.md like declined issues. (acceptance: carry-over
       instruction present in implement-phase.md and consistent with
       review-phase.md + AGENTS.md deferral language) [type: smoke]
+- [x] Task 2.3: Wire the deferred-tasks carry-over chain's receiver half —
+      phase-lifecycle part C point 4 broadened to name implementation tasks
+      skipped after a FAIL; review-phase.md step 5 coverage list names the
+      skipped-tasks landing spot. Found by Phase 2 review; resolved
+      in-review `949ed47` (closes NB-1/NB-3). (acceptance: part C point 4
+      and review-phase.md step 5 both name skipped-after-FAIL tasks;
+      implement-phase.md's citation is literally true) [type: smoke]
 
 Blocking: after Phase 1 (FAIL wording references the new commit scoping).
 
@@ -110,7 +118,9 @@ phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
       window that opens at Phase 1 and is live through Phases 2–3: lead's
       docs-only `git add docs/<slug>/` commit stages the live log until
       this lands — see feedback-log risk; reconsider this task's sequencing
-      if the automated run keeps logging to this path). (acceptance:
+      if the automated run keeps logging to this path — trigger observed
+      during Phase 2 review (log active through the review commits),
+      decision due before Phase 3 starts). (acceptance:
       `git check-ignore -v` hits all three, including
       `docs/_archive/x/autorun.log`) [type: smoke]
 - [ ] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
