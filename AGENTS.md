@@ -83,6 +83,14 @@ starts with `cd`, not `rm -rf`. Compound commands chained with `&&`/`;`/`|`
 are extremely common (an agent probing an environment before committing to
 a real task will naturally write multi-step one-liners), so a denylist that
 only checks the prefix has a real gap. The match-anywhere versions close it.
+One exception to the dual-listing rule: the `task-implementer`/`issue-resolver`
+force-push family ships without an exact anymatch counterpart — `git push origin +*`
+has none, and `*push -f *` demands a trailing space — so compound variants of exactly
+those patterns are not fully covered there. Closing it (a `"*git push*"` deny on the
+pair, as `lead` already carries) is a queued decision tracked with the push-hardening
+cluster, deliberately not taken in this slug: spec FR6 scoped the pair to `branch -D`
+plus force-push variants, and prior reviews routed the broader hardening to a
+user/harness-streamlining decision.
 
 **Why allow-by-default instead of a narrow allowlist with `ask` as the
 fallback:** an allowlist only covers the commands someone thought to list
