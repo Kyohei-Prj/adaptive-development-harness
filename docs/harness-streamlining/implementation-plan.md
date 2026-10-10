@@ -15,14 +15,14 @@ making that possible actually works, and the fully-planned fallback branch
 if it doesn't. After this phase, `opencode debug config` (or the fallback
 parse) shows the same effective permission sets as slug 1's per-file lists.
 **Tasks:**
-- [ ] Task 1.1: Gate experiment A (throwaway, `.scratch/gate-a/`): minimal
+- [x] Task 1.1: Gate experiment A (throwaway, `.scratch/gate-a/`): minimal
       fake third-party project copying the shipped `.opencode/opencode.json`
       with a sentinel `watcher.ignore` entry; run `opencode debug config`
       there; PASS = sentinel present in resolved config. Record PASS/FAIL +
       evidence in the task report (Phase 1 review logs it in feedback-log).
       Clean up `.scratch/`. (acceptance: recorded verdict with the debug
       output excerpt; nothing under `.scratch/` committed) [type: smoke]
-- [ ] Task 1.2: Gate experiment B (throwaway, `.scratch/gate-b/`): top-level
+- [x] Task 1.2: Gate experiment B (throwaway, `.scratch/gate-b/`): top-level
       `permission.bash` deny of a harmless sentinel pattern + throwaway
       agent frontmatter allowing it; PASS = resolved config shows agent rule
       winning. Same recording/cleanup rules. (acceptance: recorded verdict
@@ -36,7 +36,7 @@ parse) shows the same effective permission sets as slug 1's per-file lists.
       before/after). (acceptance: before/after resolved-permission diff
       empty of semantic change; zero shared-list entries left in agent
       files) [type: smoke]
-- [ ] Task 1.4: README: document the hoist + consequence — the `.opencode`
+- [x] Task 1.4: README: document the hoist + consequence — the `.opencode`
       layer out-votes a user's project-root config on conflicting patterns;
       note where to override. Under fallback (A∨B FAIL): instead record the
       fallback decision (per-agent lists retained; doctor gains a
