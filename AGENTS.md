@@ -6,9 +6,9 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 0. **Grill (optional but recommended for anything non-trivial)** — `/grill <idea>` (uses the `grill` agent). Pure alignment interview in rounds over the design tree's frontier, no docs written. Ends with a short design-concept summary. Close this session, then start a fresh one for Planning — don't run Plan inside the same session, and don't skip straight to `/plan` for anything with real design ambiguity.
 1. **Planning** — `/plan <idea or grill summary>` (uses the `planner` agent). Produces `docs/<slug>/architecture.md`, `spec.md`, `implementation-plan.md`, and an empty `feedback-log.md`. Phases in `implementation-plan.md` are structured as **vertical slices** (each one crosses every layer to deliver one thin, reviewable, end-to-end piece of behavior) — not horizontal layers like "all schema, then all API, then all UI". Commit the docs manually before starting Implementation.
 2. **Implementation** — `/implement-phase <n> <slug>` (uses the `lead` agent).
-   `lead` captures the current branch as this phase's base, creates and switches to `feature/<slug>-phase-<n>`, and records the base in `docs/<slug>/phase-branches.md` (never inferred later — this is what makes review's diff baseline reliable). It checks `feedback-log.md` for any open risks or deferred issues relevant to this phase and surfaces them as a heads-up, then MUST delegate each task to the `task-implementer` subagent via the Task tool. Tasks tagged `[parallel-with: ...]` run in isolated git worktrees under `.worktrees/` (one branch per task, merged back sequentially, never in parallel) rather than sharing the main working tree — everything else runs sequentially. `lead` never edits files itself; it commits the completed phase once all tasks report done.
+   `lead` captures the current branch as this phase's base, creates and switches to `feature/<slug>-phase-<n>`, and records the base in `docs/<slug>/phase-branches.md` (never inferred later — this is what makes review's diff baseline reliable). It checks `feedback-log.md` for any open risks or deferred issues relevant to this phase and surfaces them as a heads-up, then MUST delegate each task to the `task-implementer` subagent via the Task tool. Tasks tagged `[parallel-with: ...]` run in isolated git worktrees under `.worktrees/` (one branch per task, merged back sequentially, never in parallel) rather than sharing the main working tree — everything else runs sequentially. `lead` makes no file edits of its own beyond bookkeeping (the `phase-branches.md` rows and the `implementation-plan.md` checkbox flips — never content); once all tasks report done it creates the phase-complete commit, which is docs-only (`git add docs/<slug>/`) — each `task-implementer` commits its own code as its end-of-task step, so lead never commits code.
 3. **Feedback** — `/review-phase <n> <slug>` (uses the `lead` agent).
-   `lead` delegates the review to `phase-reviewer` (which reads `phase-branches.md` for the correct diff baseline rather than guessing), presents findings to the user, delegates confirmed blocking and non-blocking issues to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`, then commits all fixes and doc updates. "Risks for future phases" are speculative and are only ever logged. Issues the user declines to resolve now are **deferred, not dropped** — they're logged in `feedback-log.md` and resurface as a heads-up in a later phase the same way risks do. Merging the feature branch to main is the user's responsibility.
+   `lead` delegates the review to `phase-reviewer` (which reads `phase-branches.md` for the correct diff baseline rather than guessing), presents findings to the user, delegates confirmed blocking and non-blocking issues to `issue-resolver` sequentially, and only on confirmation delegates doc updates to `doc-updater`; each `issue-resolver` commits its own fix as it finishes, and `lead` then commits only the doc updates (`git add docs/<slug>/` — `doc-updater` has no bash access, so its edits ride in lead's docs-only commit). "Risks for future phases" are speculative and are only ever logged. Issues the user declines to resolve now — and implementation tasks skipped after a FAIL during Implementation — are **deferred, not dropped**: they're logged in `feedback-log.md` and resurface as a heads-up in a later phase the same way risks do. Merging the feature branch to main is the user's responsibility.
 
 **Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed; anything skipped after a FAIL is logged as deferred, not dropped). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL or a parallel-task merge conflict occurs.
 
@@ -21,8 +21,8 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 **Periodically (not tied to any single slug):** run `/architecture-review [path]` — a whole-codebase scan for shallow-module sprawl and drift that accumulates gradually across many individually-fine phases. Per-phase review can't catch this; it's a separate, standalone pass.
 
 ## Context hygiene rule
-Any agent doing actual file edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session
-holds summaries, not diffs.
+Any agent doing actual content edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session
+holds summaries, not diffs. `lead`'s bookkeeping — the `phase-branches.md` rows and `implementation-plan.md` checkbox flips — is the one designed exception.
 
 ## Parallel task isolation
 Tasks tagged `[parallel-with: ...]` in `implementation-plan.md` do NOT share
@@ -31,8 +31,9 @@ the main working tree. `lead` gives each one its own git worktree under
 `task-implementer` instance pointed at that directory, and merges each
 branch back into the phase branch sequentially once all tasks in the group
 finish — never in parallel, and never automatically past a merge conflict
-(that always stops and waits for the user). Add `.worktrees/` to your
-project's `.gitignore` if it isn't covered already; it's already excluded
+(that always stops and waits for the user). The shipped `.gitignore` already
+lists `.worktrees/` (for a project adopting the harness into an existing
+repo, it's one of the three lines to merge in); it's also already excluded
 from `opencode.json`'s file watcher.
 
 ## Stay inside the project directory
@@ -40,9 +41,9 @@ from `opencode.json`'s file watcher.
 operate outside the project's own tree — no `cd /tmp`, no writing to a home
 directory, nothing outside this repo. If an agent needs scratch space (e.g.
 testing whether a package installs cleanly before committing to it in a real
-task), it uses `.scratch/` at the project root instead — already excluded
-from `opencode.json`'s file watcher; add it to `.gitignore` too. This isn't
-just tidiness: OpenCode gates any file operation outside the project root
+task), it uses `.scratch/` at the project root instead — already in the
+shipped `.gitignore` and already excluded from `opencode.json`'s file
+watcher. This isn't just tidiness: OpenCode gates any file operation outside the project root
 behind a separate `external_directory` permission, distinct from `bash`/
 `edit`/`webfetch`, and no agent here has it granted. Interactively that
 means a prompt you'd have to approve; headlessly (via `scripts/autorun.sh`)
@@ -60,10 +61,15 @@ regardless of how a task is phrased — force-push, `rm -rf`/`rm -fr`,
 `phase-reviewer` and `architecture-reviewer` also deny `git commit`/
 `git add`/`git push` outright, since they're read-only by design (`edit:
 deny`) and the denylist closes the same door at the bash layer, which is a
-separate channel from the edit tool. `lead` additionally restricts `git
-merge` and `git mv` to the narrow patterns its own procedures actually use
-(`git merge task/*`, `git mv docs/*/... docs/_archive/*/...`), denying the
-unscoped versions.
+separate channel from the edit tool. `lead` denies every form of push too —
+plain (`git push*`) and `&&`-chained (`*git push*`), not just the force-push
+variants, since pushing is never an agent operation — but unlike the two
+reviewers it keeps `git add`/`git commit`: its own commits are the docs-only
+`git add docs/<slug>/` shape (`task-implementer` and `issue-resolver` keep
+`git add`/`git commit` for the same reason: each commits its own work, with
+explicit paths). `lead` additionally restricts `git merge` and `git mv` to
+the narrow patterns its own procedures actually use (`git merge task/*`,
+`git mv docs/*/... docs/_archive/*/...`), denying the unscoped versions.
 
 If a task or issue fix seems to genuinely need a denied command, the agent
 is instructed to stop and report rather than find a workaround — that
@@ -83,7 +89,8 @@ fallback:** an allowlist only covers the commands someone thought to list
 in advance, and `ask` requires a human to answer — which works fine
 interactively, but silently stalls forever when an agent is invoked
 headlessly (`opencode run`, as `scripts/autorun.sh` does). Every agent that
-might run in that headless path uses allow-by-default-with-denylist, not
+might run in that headless path uses allow-by-default-with-denylist (or,
+like `doc-updater`, denies bash outright — full deny stalls nothing), not
 allowlist-with-ask-fallback, for exactly this reason. `grill` is the one
 deliberate exception (`webfetch: ask`) — it's interactive by design and
 never invoked headlessly, so `ask` is correct there.
@@ -106,8 +113,8 @@ a session run long:
   enabled in `opencode.json`, treat it as a safety net for sessions that ran
   longer than intended, not as a substitute for closing sessions between
   stages.
-- This is also why `lead` is locked to delegating rather than editing files
-  itself: keeping the orchestrating session small is what makes multi-phase
+- This is also why `lead` delegates all content edits rather than making
+  them itself: keeping the orchestrating session small is what makes multi-phase
   runs viable at all — **with one exception.** The in-chat `/autorun`
   command still runs every phase inside one continuous `lead` session (a
   single checkpoint pause between phases, no restart), so on a long plan its

@@ -104,7 +104,7 @@ User idea
 
 - **Alignment before artifacts** — `grill` interviews you about the design with no doc-writing reward in sight, so it can't rush the interview to get to a deliverable. `planner` only starts once that alignment exists (or flags that it doesn't). Splitting these into separate agents/sessions is deliberate: an agent that can see the next step tends to shortcut the current one.
 - **Vertical slices over horizontal layers** — `implementation-plan.md` phases are structured to cross every layer (schema → service → API → UI) and produce something reviewable after each phase, not "all the schema, then all the API, then all the UI."
-- **Context hygiene / smart zone** — the primary (lead) session never holds diffs; all file edits happen inside sub-agent child sessions, and the lead only receives task summaries. More generally, keep any single session under ~100K tokens of practical use — start fresh between Grill/Plan/Implement rather than letting one session run the whole feature. See `AGENTS.md`'s "Smart zone / dumb zone" section.
+- **Context hygiene / smart zone** — the primary (lead) session never holds diffs; all content edits happen inside sub-agent child sessions (lead's own edits are the bookkeeping exception only: the `phase-branches.md` rows and `implementation-plan.md` checkbox flips), and the lead only receives task summaries. More generally, keep any single session under ~100K tokens of practical use — start fresh between Grill/Plan/Implement rather than letting one session run the whole feature. See `AGENTS.md`'s "Smart zone / dumb zone" section.
 - **Reviewer runs dumber-proof** — `phase-reviewer` always runs in a fresh subagent context (never appended to the implementer's session) and can be pinned to a stronger model than the implementer, so review reasoning isn't capped by whatever context state the implementer left behind.
 - **Push vs pull standards** — coding standards are pulled on demand by `task-implementer`/`issue-resolver` (loaded only if they're uncertain) but pushed inline into `phase-reviewer` (always enforced, since the reviewer is the one gate that must not skip them).
 - **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
@@ -221,7 +221,7 @@ Then close the planner session before starting Implementation. The `lead` agent 
 
 **Agent:** `lead` (delegates to `task-implementer` subagent)  
 **Trigger:** `/implement-phase <n> <slug>`  
-**Output:** working code with tests, committed after the phase is done
+**Output:** working code with tests, each task committed by its `task-implementer` as it finishes, plus a docs-only phase-complete commit from `lead`
 
 `lead` reads the phase's task list. Before delegating the first task, it captures the current branch as this phase's base, creates `feature/<slug>-phase-<n>`, and appends a row to `docs/<slug>/phase-branches.md` recording that base explicitly — this is what lets `phase-reviewer` compute a reliable diff baseline later without guessing. It then checks `feedback-log.md` for any "Risks for future phases" or "Deferred issues" entries relevant to this phase and surfaces them to you as a brief heads-up — informational only, it doesn't pause or ask for confirmation.
 
@@ -234,9 +234,11 @@ For each task, `lead` delegates to `task-implementer` via the Task tool, passing
 
 Tasks marked `[parallel-with: X]` are handled differently from everything else: `lead` gives each one its own git worktree under `.worktrees/<slug>-<task-id>` on a dedicated branch, delegates a separate `task-implementer` instance pointed at that directory, and — once every task in the group reports done — merges each branch back into the phase branch **sequentially, one at a time, never in parallel**. If a merge conflict occurs, `lead` stops immediately and waits for you rather than attempting to resolve it. This keeps genuinely-parallel work from racing on the same files; tasks with no `[parallel-with]` tag just run sequentially in the main working tree as before.
 
+If a `task-implementer` reports **FAIL**, `lead` stops delegating the rest of the phase — no retry, no workaround, no phase commit — surfaces the root cause, and asks your direction: fix, skip, or adjust. Tasks that end up not completed are recorded and land under "Deferred issues" in the review's `feedback-log.md` entry, not dropped (see [Stage 3](#stage-3--feedback)).
+
 `lead` compiles a phase summary from each task-implementer's summary block and presents it to you before declaring the phase ready for review.
 
-`lead` then commits the completed phase automatically (`feat(<slug>): phase <n> complete`), including the updated `phase-branches.md`. The reviewer diffs this branch against the recorded fork point — see [Stage 3](#stage-3--feedback) — so this commit must exist before review runs.
+`lead` then creates the phase-complete commit automatically (`feat(<slug>): phase <n> complete`) — docs-only: `git add docs/<slug>/`, the `phase-branches.md` row and this phase's checkbox flips in `implementation-plan.md`, nothing else. No code is swept in: each `task-implementer` committed its own work with explicit paths as its end-of-task step, and `lead` commits only `docs/<slug>/`. The reviewer diffs this branch against the recorded fork point — see [Stage 3](#stage-3--feedback) — so this commit must exist before review runs.
 
 ---
 
@@ -256,9 +258,9 @@ Tasks marked `[parallel-with: X]` are handled differently from everything else: 
 
 `lead` presents the full report and asks you to confirm which blocking and non-blocking issues to resolve. For each confirmed issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on. **"Risks for future phases" are never delegated to `issue-resolver`** — they're speculative concerns about work that hasn't happened yet, not bugs to fix. They're recorded in `feedback-log.md` instead.
 
-Any issue you decline to resolve now isn't dropped — it's logged as a **deferred issue**, a distinct category from "risks for future phases" (a deferred issue is a confirmed real finding against code that already exists; a risk is speculative concern about work that hasn't happened yet). Deferred issues resurface as a heads-up in later phases the same way risks do.
+Any issue you decline to resolve now isn't dropped — it's logged as a **deferred issue**, a distinct category from "risks for future phases" (a deferred issue is a confirmed real finding against code that already exists; a risk is speculative concern about work that hasn't happened yet). The same applies to implementation tasks skipped after a FAIL during Implementation: `/implement-phase` records them, and `/review-phase` logs them under "Deferred issues" exactly like declined ones. Deferred issues resurface as a heads-up in later phases the same way risks do.
 
-Once all confirmed issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering the original findings, deferred issues, logged risks, and the resolutions applied. `lead` then commits all fixes and doc updates automatically (`review(<slug>): phase <n> fixes and doc updates`).
+Once all confirmed issues are resolved, `lead` asks whether to apply the doc updates. On your confirmation, `doc-updater` makes the targeted edits and appends a dated entry to `feedback-log.md` covering the original findings, deferred issues, logged risks, and the resolutions applied. `lead` then commits automatically — docs-only (`git add docs/<slug>/`, message `review(<slug>): phase <n> fixes and doc updates`); each fix was already committed by the `issue-resolver` that wrote it, since `lead` commits only `docs/<slug>/`.
 
 Repeat **Implementation → Feedback** for each phase until the plan is complete. Once every phase is done, run `/finalize <slug>` before merging — see below — and `/archive <slug>` after merging to main.
 
@@ -275,11 +277,11 @@ If you trust the plan and want to skip the within-phase confirmations but still 
 1. Captures the current branch as this phase's base and records it in `phase-branches.md`, then creates the `feature/<slug>-phase-N` branch
 2. Checks `feedback-log.md` for relevant open risks and deferred issues, and surfaces them as a heads-up (informational only)
 3. Delegates all tasks to `task-implementer` (same TDD / Smoke rules apply); `[parallel-with]` groups run in isolated worktrees, merged back sequentially (same as `/implement-phase`)
-4. Commits the completed phase
+4. Creates the docs-only phase-complete commit (`git add docs/<slug>/`; each `task-implementer` already committed its own code)
 5. Delegates review to `phase-reviewer` (diffed against the recorded base in `phase-branches.md`)
 6. Resolves **all** blocking and non-blocking issues via `issue-resolver` (sequentially, no confirmation). Risks for future phases are not delegated — they're logged in `feedback-log.md` by `doc-updater` instead. If a FAIL is skipped by your direction rather than fixed, it's logged as a deferred issue, not dropped.
 7. Delegates doc updates to `doc-updater`
-8. Commits fixes and doc updates
+8. Commits the doc updates (each `issue-resolver` already committed its own fix)
 9. Reports a per-phase progress summary
 10. **Pauses and asks you to confirm before starting the next phase** — this is the one checkpoint in an otherwise hands-off run, so a multi-phase run never disappears from view entirely.
 
@@ -344,16 +346,16 @@ Three commands sit outside the per-phase Implementation ↔ Feedback loop — on
 |---|---|---|---|
 | `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask · task: explore/scout only |
 | `planner` | primary | Transcribes an aligned design concept into docs, structured as vertical slices | edit: allow · bash: deny · webfetch: allow |
-| `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (`phase-branches.md` only, by convention) · bash: allow with destructive-command + scope denylist · webfetch: deny · task: whitelisted 5 subagents only |
+| `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (bookkeeping only — `phase-branches.md` rows + `implementation-plan.md` checkbox flips, by convention) · bash: allow with destructive-command + push + scope denylist · webfetch: allow · task: whitelisted 5 subagents only |
 | `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure; may be pointed at a git worktree for parallel work | edit/bash/webfetch: allow, with force-push/`rm -rf`/`reset --hard`/etc. hard-denied · task: deny |
-| `phase-reviewer` | subagent | Read-only review, diffs against the base recorded in `phase-branches.md`, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model; also runs in finalize mode for `/finalize` | edit: deny · bash: allow with destructive-command + commit/push denylist |
+| `phase-reviewer` | subagent | Read-only review, diffs against the base recorded in `phase-branches.md`, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model; also runs in finalize mode for `/finalize` | edit: deny · bash: allow with destructive-command + commit/add/push denylist |
 | `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks; same destructive-command denylist as `task-implementer` | edit/bash/webfetch: allow · task: deny |
 | `doc-updater` | subagent | Applies approved doc edits after issues are resolved, including deferred-issue entries | edit: allow (docs only) · bash: deny |
-| `architecture-reviewer` | subagent | Whole-codebase architecture scan (shallow modules, dead code, naming drift), independent of any phase; read-only | edit: deny · bash: allow with destructive-command + commit/push denylist |
+| `architecture-reviewer` | subagent | Whole-codebase architecture scan (shallow modules, dead code, naming drift), independent of any phase; read-only | edit: deny · bash: allow with destructive-command + commit/add/push denylist |
 
 `lead` is locked to its five named subagents — it cannot invoke any other subagent. `grill` is likewise locked down — it can spawn only the read-only `explore`/`scout` subagents, never the implementation agents (`scout` is optional in some installs; the allow entry is a harmless no-op when absent). None of the subagents can spawn further subagents, preventing unbounded delegation chains. `grill` and `planner` are separate primary agents used in separate sessions — closing one before opening the next is what keeps each session's context small and keeps `grill` from rushing to a deliverable.
 
-**Every agent that can run headlessly (all of the above except `grill` and `planner`) uses allow-by-default-with-denylist for bash, never allowlist-with-`ask`-fallback.** `ask` needs a human to answer, which works fine interactively but stalls forever with no one there to answer it — exactly the failure mode if you invoke `scripts/autorun.sh` against an agent still configured the old way. `grill`'s `webfetch: ask` is the one deliberate exception, since it's interactive-only by design.
+**Every agent that can run headlessly (all of the above except `grill` and `planner`) uses allow-by-default-with-denylist for bash (or, like `doc-updater`, denies bash outright — full deny stalls nothing), never allowlist-with-`ask`-fallback.** `ask` needs a human to answer, which works fine interactively but stalls forever with no one there to answer it — exactly the failure mode if you invoke `scripts/autorun.sh` against an agent still configured the old way. `grill`'s `webfetch: ask` is the one deliberate exception, since it's interactive-only by design.
 
 ---
 
@@ -536,7 +538,7 @@ Task 1.3 — TDD   — PASS (pytest test_routes.py — 12 tests)
 Deviations: none
 ```
 
-`lead` then commits automatically: `feat(todo-app): phase 1 complete`.
+`lead` then creates the docs-only phase-complete commit — `feat(todo-app): phase 1 complete`, covering `phase-branches.md` plus the phase's checkbox flips (each task's code was already committed by its implementer).
 
 ### Step 4 — Review Phase 1
 
@@ -631,7 +633,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Keep `/plan` arguments to a headline.** One line sets the topic; the planner's questions fill in the rest. Long arguments with special characters can confuse the command parser.
 
-**Commit once manually:** after Planning (the four docs). Everything after that — branching, phase commits, and review commits — is handled by `lead` automatically. Your only other git responsibility is merging the feature branch to main when all phases are done.
+**Commit once manually:** after Planning (the four docs). Everything after that is handled automatically — branching and `lead`'s docs-only phase/review commits (`git add docs/<slug>/`), plus the code commits each `task-implementer`/`issue-resolver` makes for its own work. Your only other git responsibility is merging the feature branch to main when all phases are done.
 
 **Close the planner session before implementing.** The `lead` agent needs a fresh primary session. Running `/implement-phase` inside a planner session uses an agent with `bash: deny`, which will block every sub-agent delegation.
 
@@ -679,7 +681,7 @@ Expected — `lead` never attempts automatic conflict resolution for parallel-ta
 `lead` only cleans these up after a successful merge, so an interrupted parallel group can leave them behind. Safe to remove manually: `git worktree remove .worktrees/<slug>-<task-id> --force` (only if the work is already merged or you're discarding it) and `git branch -D task/<slug>-<task-id>`.
 
 **`task-implementer` reports FAIL and stops**  
-This is the intended behavior. Read the root cause in the summary, decide whether to fix the failing test, adjust the task description, or update the plan. Then re-run `/implement-phase` for that phase — `lead` will re-delegate the failed task.
+This is the intended behavior — `lead` stops delegating the rest of the phase, commits nothing, and asks for your direction. Read the root cause in the summary, then direct it: fix the failing test (`lead` re-delegates the task), adjust the task description or update the plan, or skip. Skipped tasks are recorded and `/review-phase` logs them as deferred issues — not dropped. If the session already ended before you decided, re-run `/implement-phase` for that phase — `lead` will re-delegate the unfinished tasks.
 
 **`issue-resolver` reports FAIL and stops**  
 Same principle. Read the root cause, decide whether the issue description was ambiguous or the fix is genuinely hard. You can rephrase the issue and ask `lead` to retry, defer it (it'll be logged as a deferred issue and resurface next phase), or fix it manually and tell `lead` to proceed.
@@ -688,7 +690,7 @@ Same principle. Read the root cause, decide whether the issue description was am
 `task-implementer` will self-classify (defaulting to TDD when uncertain) and state its classification at the start of its response. You can correct it by responding to the lead with the right type before the next task is delegated. Fix the tag in `implementation-plan.md` for the record.
 
 **The `lead` agent tries to edit files directly**  
-Remind it: `Delegate this to task-implementer via the Task tool. Do not edit files in this session.` The `edit: ask` permission means it will prompt you first — decline and redirect.
+Remind it: `Delegate this to task-implementer via the Task tool. Do not edit files in this session.` There's no prompt to decline here: `lead`'s `edit` permission is `allow` by design, scoped by its instructions to bookkeeping only (the `phase-branches.md` rows and `implementation-plan.md` checkbox flips), so any other edit it attempts is an instruction violation — redirect it rather than expecting a permission block.
 
 **Docs have diverged from the code**  
 Run `/review-phase <last-completed-n> <slug>` even if you skipped it earlier. The `phase-reviewer` will surface the divergence and `doc-updater` will reconcile it.
