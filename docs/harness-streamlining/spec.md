@@ -48,9 +48,15 @@ truth.
 ## Functional requirements
 1. FR1: After the hoist, every bash agent's resolved permission set equals
    its slug-1 pre-hoist set (role deltas + shared list = same effective
-   rules), verified by doctor.sh check 1.
+   rules), verified by doctor.sh check 1. [Phase 1: superseded by the FR8
+   fallback — gate experiment B was reclassified FAIL and the hoist was not
+   applied; under the taken fallback branch, FR1's equality expectation is
+   replaced by doctor.sh's denylist-drift check over the per-agent copies.]
 2. FR2: Agent frontmatter contains only role deltas after the hoist — no
-   duplicated shared-list entries.
+   duplicated shared-list entries. [Phase 1: superseded by the FR8 fallback —
+   the "role deltas only" expectation does not apply under the taken branch;
+   per-agent shared-list duplication is the intended shipped state (see
+   README).]
 3. FR3: doctor.sh implements exactly these checks and exits non-zero on any
    failure: (1) role-table permissions via `opencode debug config` (fallback:
    parse frontmatter + config), (2) no `<fill in` under `.opencode/`,
@@ -88,7 +94,8 @@ truth.
       demonstrated to fail on a deliberately-violated fixture copy;
       simulation cleans `.scratch/` on pass, keeps it on fail.
 - [ ] Resolved permissions (debug config or fallback parse) match the role
-      table; agent files show no shared-list duplication.
+      table; agent files' shared-list copies are consistent (drift-checked) —
+      the duplication itself is the intended fallback shape, not a defect.
 - [ ] AGENTS.md ≤ 80 lines; README contains the relocated essays; grep
       proves no essay duplicated across the two files.
 - [ ] 3 no-op phrases gone (grep); commands files byte-identical; 8 agent
