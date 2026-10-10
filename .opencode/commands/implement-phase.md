@@ -4,7 +4,7 @@ agent: lead
 ---
 Implement Phase $1 of docs/$2/implementation-plan.md.
 
-Follow the `phase-lifecycle` skill for the mechanical procedures below — this command only states the policy specific to it (interactive, asks nothing but reports as it goes).
+Follow the `phase-lifecycle` skill for the mechanical procedures below — this command only states the policy specific to it (interactive, asks nothing in the normal flow but reports as it goes — a stop condition below is the only thing that prompts a question).
 
 Steps:
 0. Phase branch setup — see `phase-lifecycle` skill, part A. (Slug: $2, phase: $1.)
@@ -17,3 +17,11 @@ Steps:
    - Task → Approach → Test result → Deviations/risks
    Flag any FAIL or deviation before declaring the phase ready for review.
 6. Stage and commit the doc changes (including `phase-branches.md`): `git add docs/$2/ && git commit -m "feat($2): phase $1 complete"`.
+
+## Stop conditions — do not attempt to work around any of these
+
+- **Any `task-implementer` reports FAIL.** Do not retry, do not reinterpret the task, do not skip it and continue to the next task.
+- **A worktree merge conflict occurs** during parallel-task merge-back (`phase-lifecycle` part B, step 3). Never attempt automatic conflict resolution.
+- **Any destructive-command refusal surfaces from a subagent** (see the denylist in `task-implementer.md`) that blocks completing a task as described.
+
+On any stop condition: do NOT commit. Stop delegating, surface the root cause to me in full — what was attempted, what succeeded before the stop, and exactly what stopped it — and ask me for direction instead of halting or working around it.
