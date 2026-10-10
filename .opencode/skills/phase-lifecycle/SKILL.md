@@ -58,7 +58,7 @@ For each parallel group (2+ tasks tagged parallel with each other):
    `NEEDS_HUMAN` stop condition (see the `phase-lifecycle` status-trailer
    section, part D) — the run cannot continue unattended past a conflict.
 4. After a successful merge, verify before cleanup — both checks must
-   pass: `git status --porcelain` run in that worktree is empty (the
+   pass: `git -C .worktrees/<slug>-<task-id> status --porcelain` is empty (the
    worker committed everything) and
    `git merge-base --is-ancestor task/<slug>-<task-id> feature/<slug>-phase-N`
    succeeds (the task's commits actually landed in the phase branch).
