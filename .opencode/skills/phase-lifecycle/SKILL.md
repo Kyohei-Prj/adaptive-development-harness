@@ -27,6 +27,10 @@ This file is what `phase-reviewer` reads later for its diff baseline — a
 missing or skipped row means review can't determine what changed in this
 phase versus what changed in a prior one. Commit it in your single docs-only
 phase-complete commit (`git add docs/<slug>/`); don't leave it staged-but-uncommitted.
+Its message shape is canonical: `feat(<slug>): phase <n> complete` — the slug
+appears once, as the conventional-commit scope, never repeated in the
+description; the three phase-implementation commands emit exactly this after
+`$1`/`$2` substitution.
 
 ## B. Parallel task execution (worktrees)
 
