@@ -124,7 +124,7 @@ config contains no personal settings, no live template placeholder ships.
 (Closes defects: gitignore gaps + post-archive autorun.log visibility;
 phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
 **Tasks:**
-- [ ] Task 4.1: .gitignore — add `.worktrees/`, `.scratch/`,
+- [x] Task 4.1: .gitignore — add `.worktrees/`, `.scratch/`,
       `**/autorun.log` (this task also closes the `autorun.log`-sweep
       window that opens at Phase 1 and is live through Phases 2–3: lead's
       docs-only `git add docs/<slug>/` commit stages the live log until
@@ -138,17 +138,17 @@ phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
       `git add docs/harness-defects/`). (acceptance:
       `git check-ignore -v` hits all three, including
       `docs/_archive/x/autorun.log`) [type: smoke]
-- [ ] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
+- [x] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
       deliberately leaves `autorun.log` behind (it's gitignored; the
       historical log stays at its live path or is discarded, by design).
       (acceptance: note present in archive.md) [type: smoke]
-- [ ] Task 4.3: README copy-instructions — add the `.gitignore` line to the
+- [x] Task 4.3: README copy-instructions — add the `.gitignore` line to the
       copy list. (acceptance: copy list includes .gitignore with a one-line
       rationale) [type: smoke]
-- [ ] Task 4.4: phase-reviewer.md — delete the live `<fill in …>`
+- [x] Task 4.4: phase-reviewer.md — delete the live `<fill in …>`
       placeholder, preserving the surrounding defaults it annotated.
       (acceptance: no `<fill in` in `.opencode/` (grep); defaults intact) [type: smoke]
-- [ ] Task 4.5: `.opencode/opencode.json` — reduce to `$schema` +
+- [x] Task 4.5: `.opencode/opencode.json` — reduce to `$schema` +
       `watcher.ignore` entries only; README documents that the author moves
       personal lsp/mcp/provider/compaction entries to global config
       manually (documentation of a manual step — no agent touches
