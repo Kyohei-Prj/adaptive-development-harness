@@ -75,20 +75,20 @@ gitignore, docs) self-consistent with the fixed behavior.
   non-parallel (no-worktree) path.
 
 ## Acceptance criteria
-- [ ] All seven defects demonstrably fixed (map each to FRs 1–10 in the
+- [x] All seven defects demonstrably fixed (map each to FRs 1–10 in the
       final review report).
-- [ ] `grep -rn "git add -A" .opencode/` → no hits; `grep -rn "<fill in"
+- [x] `grep -rn "git add -A" .opencode/` → no hits; `grep -rn "<fill in"
       .opencode/` → no hits.
-- [ ] Frontmatter audit: push/branch -D denies and grill whitelist present
+- [x] Frontmatter audit: push/branch -D denies and grill whitelist present
       with prefix+anymatch pairing where specified.
-- [ ] `git check-ignore -v` succeeds for the three `.gitignore` entries,
+- [x] `git check-ignore -v` succeeds for the three `.gitignore` entries,
       including `docs/_archive/<slug>/autorun.log`.
-- [ ] Shipped config diff shows only `$schema` + `watcher.ignore` remain.
-- [ ] Pure-git simulation (Task 1.4) passes: dirty worktree → removal
+- [x] Shipped config diff shows only `$schema` + `watcher.ignore` remain.
+- [x] Pure-git simulation (Task 1.4) passes: dirty worktree → removal
       refuses; committed+merged → removal succeeds; lead-equivalent commit
       adds only `docs/<slug>/`.
-- [ ] Dogfooding: each phase passes `/review-phase`; `/finalize` clean.
-- [ ] README + AGENTS.md describe shipped reality (FR11 included).
+- [x] Dogfooding: each phase passes `/review-phase`; `/finalize` clean.
+- [x] README + AGENTS.md describe shipped reality (FR11 included).
 
 ## Constraints / assumptions
 - Slug 1 dogfoods itself: phase N runs under a partially-updated harness;

@@ -489,3 +489,72 @@ ticked at `/finalize`, not before.
 - spec.md: none — tick acceptance items at `/finalize` only.
 
 ---
+
+## 2026-10-10 — Finalize check — whole-branch pre-merge review (Phases 1–5)
+
+Finalize verdict: **PASS — merge-ready.** Diff `harness-defects`..`d1b5c05`
+(21 files, +774/−209, 31 commits) re-checked as one unit — 0 blocking,
+2 new cosmetic non-blocking (logged, not fixed, per finalize policy),
+0 regressions of any prior disposition, 0 new risks. The per-phase blind
+spot (cross-phase interaction) was checked explicitly: the four
+repeatedly-edited files (lead.md, phase-lifecycle SKILL.md, AGENTS.md,
+README.md) verified for aggregate coherence at HEAD; the FR1–FR11 spec
+acceptance list re-verified item by item; commit authorship re-checked
+across all 31 commits.
+
+**Issues found:**
+- [blocking] None.
+- [non-blocking] README.md:722-723: "The denylist patterns exist in two
+  forms per dangerous command" stated unqualified — over-claims for the
+  pair's force-push family exactly as `AGENTS.md:78` did pre-`9b896a3`.
+  Per-phase miss explained: Phase 5's NB-1 qualification was applied to
+  the AGENTS.md paragraph only. Explicitly NOT fixed in isolation: the
+  sentence becomes literally true the moment push-hardening cluster
+  item (a) (`"*git push*"` deny on the pair) lands — fold a one-clause
+  pointer to the AGENTS.md exception paragraph into that same routed
+  decision, mechanics and doc half in one change.
+- [non-blocking] lead.md:49: "` .scratch/` … (create it if it doesn't
+  exist; it should be gitignored)" — stale wording vs shipped reality
+  (it IS in the shipped `.gitignore`, as AGENTS.md:44 and README:650
+  now say); one-word-class miss in the Phase 5 sweep; harmless.
+- Testing compliance: PASS — all 17 `[type: smoke]` tasks green; finalize
+  spot-check targeted later-phases-invalidating-earlier-fixed-strings
+  (`git add -A` zero-hits, twin FAIL-section parity, five-way branch-deletion
+  string identity, Task 1.4 sim hygiene) — none tripped.
+- Commit-invariant, full range: `7a777da` Phase 1 = documented bootstrap
+  exception (stands); `834dc09`/`6066bef`/`507c208` docs-only + template ✅;
+  `af68e02` docs-only with documented NB-5 template drift; union of touched
+  paths across all 31 commits stays within `.opencode/`, `.gitignore`,
+  `README.md`, `AGENTS.md`, `docs/harness-defects/`;
+  `docs/harness-defects/autorun.log` touched by 0 commits, ignored at HEAD;
+  all 5 review commits match the `review(<slug>): phase <n> fixes and doc
+  updates` template.
+
+**Resolutions applied:**
+- None — finalize auto-fixes blocking issues only, and there were none.
+
+**Deferred issues (confirmed but not fixed this round):**
+- No new deferred issues. The two non-blocking findings above are logged
+  unfixed per finalize policy; the README.md:722 finding is recommended
+  for bundling into the existing push-hardening cluster decision (item
+  (a) fixes its overclaim at the source). The cluster itself (a/b/c,
+  Phase 5 entry) stands unchanged as one routed decision
+  (user / `harness-streamlining`).
+
+**Risks for future phases:**
+- No new risks. All carried items re-confirmed accurately disposed:
+  push-hardening cluster (a/b/c); Phase 2 NB-2 twin duplication
+  (harness-streamlining; byte-parity verified at HEAD); R-5
+  (harness-streamlining / FR10 two-keys contradiction); R-6 (post-archive
+  residue — this slug's own `/archive` will be its first real test);
+  R-7 (`autorun.log` rotation — later slug).
+
+**Doc changes applied:**
+- spec.md: acceptance list fully ticked (8 boxes) — the finalize re-check
+  verified every item end-to-end at HEAD, closing the two criteria that
+  the Phase 5 entry recorded as "pending until `/finalize`": "each phase
+  passes `/review-phase`" (5/5 phase reviews PASS) and "`/finalize` clean"
+  (this entry).
+- feedback-log.md: this entry.
+
+---
