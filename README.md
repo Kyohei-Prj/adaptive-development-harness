@@ -450,7 +450,7 @@ git init
 opencode
 ```
 
-Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first).
+Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` and `.gitignore` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first). The `.gitignore` belongs in the copy list even though it isn't a workflow file: it keeps the harness's own ephemeral artifacts — `.worktrees/`, `.scratch/`, `**/autorun.log` — out of your commits.
 
 ### Step 1.5 (optional) — Grill first
 
