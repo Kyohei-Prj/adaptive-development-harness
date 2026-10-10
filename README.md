@@ -452,7 +452,7 @@ git init
 opencode
 ```
 
-Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` and `.gitignore` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first). The `.gitignore` belongs in the copy list even though it isn't a workflow file: it keeps the harness's own ephemeral artifacts — `.worktrees/`, `.scratch/`, `**/autorun.log` — out of your commits.
+Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first). For `.gitignore`, merge the harness's three lines into your existing `.gitignore` rather than copying the harness's file over yours — or just copy it in as-is for a fresh repo with no `.gitignore` yet. The `.gitignore` belongs in the copy list even though it isn't a workflow file: it keeps the harness's own ephemeral artifacts — `.worktrees/`, `.scratch/`, `**/autorun.log` — out of your commits.
 
 The project-level `opencode.json` shipped with this harness intentionally contains only `$schema` and the `watcher.ignore` list. Anything machine-specific — lsp/formatter toggles, MCP servers, provider definitions, compaction settings — belongs in your global OpenCode config (`~/.config/opencode/opencode.json`), which you maintain yourself; the harness never touches it.
 
