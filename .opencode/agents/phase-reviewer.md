@@ -58,9 +58,9 @@ here rather than left as an on-demand lookup:
   clusters of tightly-coupled small files that are only ever imported
   together are a candidate for merging into one module with a single test
   boundary around it.
-- <fill in project-specific naming / error-handling / style rules to match
-  `.opencode/skills/coding-standards/SKILL.md` — keep the two in sync
-  manually; this copy exists so you never have to remember to go pull it>
+- Project-specific naming, error-handling, and style rules: the defaults
+  below are an inlined copy of `.opencode/skills/coding-standards/SKILL.md`
+  — keep the two in sync manually.
   Defaults, unless the project overrides them:
   - Naming: `camelCase` (TS/JS) / `snake_case` (Python) for
     variables/functions, functions are verbs and types are nouns, booleans
