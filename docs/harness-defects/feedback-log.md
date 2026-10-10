@@ -186,3 +186,88 @@ command file — surgical.
 - spec.md: none.
 
 ---
+
+## 2026-10-10 — Phase 3 review — Enforcement hardening
+
+Reviewer verdict: **PASS** — all three `[type: smoke]` tasks met their
+literal acceptance criteria; the diff `feature/harness-defects-phase-2..3`
+is 4 commits, +18/−6 across 7 files — surgical. No blocking issues; 3
+non-blocking, all resolved in-review.
+
+**Issues found:**
+- [non-blocking] NB-1: lead.md's Task 3.1 `git push*` deny is prefix-only —
+  an `&&`-chained push (e.g. `cd x && git push origin main`) passes lead's
+  denylist while the reviewer agents carry the broader `*git push*`
+  anymatch; AGENTS.md's own dual-pattern rationale says lead should have
+  had both forms.
+- [non-blocking] NB-2: branch-deletion anymatch string drift — the
+  implementer pair used `*git branch -D*` where lead/phase-reviewer/
+  architecture-reviewer use `*branch -D*`; "one shared shape" is true
+  functionally but false as strings, which is what the frontmatter is made
+  of.
+- [non-blocking] NB-3: README agents-reference prose (L352) describes only
+  lead's subagent lock — grill's new explore/scout whitelist is undocumented
+  in prose (the table row itself is correct).
+- Testing compliance: PASS on all three `[type: smoke]` tasks (YAML parse +
+  grep re-verification per task; the phase's implementation run ended
+  `AUTORUN_STATUS: OK`). Empirical bonus: during this review the anymatch
+  denies literally blocked reviewer AND resolver probe commands — the
+  denylist works end to end.
+- Invariant checks: phase-complete commit `6066bef` is docs-only
+  (implementation-plan.md checkbox flips + phase-branches row 3 only);
+  `docs/harness-defects/autorun.log` touched by 0 commits across the range —
+  specific-file staging held through Phase 3 (3rd consecutive phase);
+  commit-message template matches.
+- Prior-phase risks: R-1 partially honored (lead surfaced the heads-up, kept
+  specific-file staging, and explicitly recorded the pull-forward decision
+  as un-taken in the unattended run — this review closes it, see Doc
+  changes); R-2/R-3/R-4 and the Phase 1 carries all honored/verified PASS.
+
+**Resolutions applied:**
+- `62751d2` (NB-1): `"*git push*": deny` anymatch added to lead.md after
+  `*branch -D*`, mirroring phase-reviewer:30; 1-line diff; the existing
+  prefix denies and scoped merge/mv allows untouched.
+- `f984f7a` (NB-2): the implementer pair's anymatch widened to `*branch -D*`
+  — unification direction judgment: the BROAD string (strictly more denied,
+  never weaker; matches lead/phase-reviewer/architecture-reviewer;
+  narrowing the other three would have weakened guardrails). All five
+  agents are now string-identical on both branch-deletion patterns.
+- `f3c2f31` (NB-3): one sentence added to the README L352 paragraph noting
+  grill's explore/scout lock, including the scout-optional no-op note; the
+  table row L343 was already correct.
+
+**Deferred issues (confirmed but not fixed this round):**
+- AGENTS.md guardrails sentence ("phase-reviewer and architecture-reviewer
+  *also* deny `git commit`/ `git add`/ `git push`") now under-describes
+  lead's post-3.1+`62751d2` push surface. Resolution = routed, not fixed
+  here: AGENTS.md drift is Task 5.3's declared sweep scope (and Phase 4 may
+  touch permission-adjacent docs again); added to 5.3 as an explicit item
+  this round so it carries rather than drops.
+
+**Risks for future phases:**
+- R-1 disposition RECORDED (was "decision due before Phase 3"): pull-forward
+  NOT taken (Phase 3 was merged); Task 4.1 executes first in Phase 4; until
+  it lands, the autorun.log sweep window stays live THROUGH PHASE 4'S OWN
+  IMPLEMENTATION AND REVIEW COMMITS — every lead docs commit until 4.1 ships
+  must stage specific files, never a bare `git add docs/harness-defects/`.
+  Phase 4 inherits a decision, not another "due before".
+- Long-form bypass: `git branch --delete --force` evades the `-D` deny in
+  all five files (as does `--delete -f`); out of spec scope — candidate for
+  a future hardening pass / harness-streamlining, not for this slug.
+- Deliberate residual: the implementer pair has no plain-push deny at all
+  (spec FR6 scoped only branch -D, force-push variants) — the "push is never
+  an agent operation" intent is only half-enforced there; candidate for user
+  decision at 5.3 or in harness-streamlining.
+
+**Doc changes applied:**
+- implementation-plan.md: Task 4.1's pull-forward trigger resolved to a
+  recorded decision (not pulled forward; executes first in Phase 4;
+  specific-file staging mandate extended to review-stage commits); Task 5.3
+  gained the AGENTS.md push-deny-sentence sweep item; Task 3.4 added
+  (`[x]` `[type: smoke]`) recording the three in-review fixes
+  (`62751d2`/`f984f7a`/`f3c2f31`), mirroring the Task 1.5/2.3 pattern;
+  Phase 3 Goal annotated.
+- architecture.md: none.
+- spec.md: none.
+
+---

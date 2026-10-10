@@ -86,9 +86,10 @@ Blocking: after Phase 1 (FAIL wording references the new commit scoping).
 ## Phase 3 — Enforcement hardening
 **Goal:** Vertical slice of the permission layer: the YAML denylists
 actually match the one-shared-shape AGENTS.md claims — closing the two drift
-holes — and grill's subagent reach is whitelisted. (Closes defects: lead
-missing plain push deny; implementer pair missing branch -D; grill
-over-broad task permission.)
+holes — and grill's subagent reach is whitelisted (string-identity +
+compound-push closure completed by Task 3.4, added during Phase 3 review).
+(Closes defects: lead missing plain push deny; implementer pair missing
+branch -D; grill over-broad task permission.)
 **Tasks:**
 - [x] Task 3.1: lead.md frontmatter — add plain `git push*` deny alongside
       existing entries. (acceptance: pattern present; existing entries and
@@ -102,6 +103,16 @@ over-broad task permission.)
       in some installs — harmless no-op); README agents-table row updated.
       (acceptance: frontmatter matches exactly; README row shows the
       whitelist, not `task: allow`) [type: smoke]
+- [x] Task 3.4: permission-shape hardening found by the Phase 3 review,
+      resolved in-review: lead.md gains the anymatch `"*git push*": deny`
+      closing the `&&`-chained push hole left by 3.1's prefix-only deny
+      (`62751d2`); task-implementer.md + issue-resolver.md anymatch
+      branch-deletion key unified to the broader `*branch -D*` form so all
+      five denylisted agents are string-identical (`f984f7a`); README
+      agents-reference prose extended with grill's explore/scout task lock
+      (`f3c2f31`). (acceptance: all five denylisted agents string-identical
+      on both branch-deletion patterns; no other permission entries
+      changed) [type: smoke]
 
 Blocking: independent of Phases 1–2 content-wise; ordered after for
 sequential dogfooding.
@@ -120,7 +131,11 @@ phase-reviewer `<fill in>` placeholder; personal config in shipped file.)
       this lands — see feedback-log risk; reconsider this task's sequencing
       if the automated run keeps logging to this path — trigger observed
       during Phase 2 review (log active through the review commits),
-      decision due before Phase 3 starts). (acceptance:
+      decision recorded at Phase 3 review: NOT pulled forward — Phase 3 was
+      already merged at review time; Task 4.1 executes first in Phase 4;
+      until it lands, every lead docs commit (implementation AND review
+      stage) must stage specific files, never a bare
+      `git add docs/harness-defects/`). (acceptance:
       `git check-ignore -v` hits all three, including
       `docs/_archive/x/autorun.log`) [type: smoke]
 - [ ] Task 4.2: archive.md — note that `git mv docs/… docs/_archive/…`
@@ -158,8 +173,14 @@ whole-slug drift.
       `git add docs/<slug>/`). (acceptance: recovery text matches FR1–FR3) [type: smoke]
 - [ ] Task 5.3: Docs follow-through — sweep README + AGENTS.md against every
       Phase 1–4 change (commit model, FAIL semantics, permission sets,
-      .gitignore, shipped config); update claims to shipped reality. No
-      length-diet or restructuring here (slug 2's job). (acceptance: no
+      .gitignore, shipped config); update claims to shipped reality. Carry
+      item from the Phase 3 review: the AGENTS.md "Destructive-command
+      guardrails" sentence claiming "`phase-reviewer` and
+      `architecture-reviewer` also deny `git commit`/ `git add`/ `git push`
+      outright" now under-describes `lead`, which since Phase 3 Task 3.1 +
+      the review's anymatch follow-up denies plain AND compound `git push`
+      too — update that sentence's scope. No length-diet or
+      restructuring here (slug 2's job). (acceptance: no
       statement contradicts the shipped mechanics; spec acceptance list
       re-verified end to end) [type: smoke]
 
