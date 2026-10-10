@@ -156,10 +156,157 @@ ruling out "the deny was never there" as an alternative B2 explanation):
 
 **Verdict — B1 (precedence): PASS. B2 (merge/union): PASS. Overall: PASS.**
 
-**Implication for the hoist:** the shared denylist can live once in the
-shipped config's top-level `permission.bash`; agents keeping role-delta
-frontmatter neither lose the shared denys (union) nor are blocked from
-their scoped allows (agent rules merge over and win) — proceed with the
-hoist. Accepted consequence to document in README: an agent's frontmatter
-can out-vote the shared denylist for its own role, same layer-wins
-semantics as the config layers.
+**Implication for the hoist (as recorded at the time — see correction
+below):** the shared denylist can live once in the shipped config's
+top-level `permission.bash`; agents keeping role-delta frontmatter neither
+lose the shared denys (union) nor are blocked from their scoped allows
+(agent rules merge over and win) — proceed with the hoist. Accepted
+consequence to document in README: an agent's frontmatter can out-vote the
+shared denylist for its own role, same layer-wins semantics as the config
+layers.
+
+> **Correction (post-Task 1.3 stop, effective-action probe below): this
+> implication is VOID.** B observed resolved-rule *entry presence* and
+> same-pattern precedence via `opencode debug agent` output; it never
+> executed a command, so it never measured *effective action*. The B
+> fixture's probe agent already contained the disarming shape — its
+> `"*": allow` catch-all flattens AFTER the config-layer deny, and by
+> last-match-wins out-votes that deny for every command it matches. The
+> "accepted consequence" was understated: with all 5 bash agents carrying
+> a `"*": allow` catch-all (the shape the hoist would leave), the
+> consequence is not "an agent can out-vote the denylist for its own
+> scoped allows" but "every shared deny is silently disarmed for every
+> agent". B is hereby reclassified FAIL on effective-action grounds.
+
+## Effective-action probe (post-B) — Experiment B reclassified FAIL
+
+**Why:** the Task 1.3 pre-edit probe caught what B could not — B's
+assumption was that a config-layer deny surviving into the agent's
+resolved rules *protects*; it was only ever verified to be *present*.
+That first disproof run lived only in an ephemeral task report, so this
+probe reproduces it as durable evidence and extends it to a decisive pair:
+the hoist shape must be shown to EXECUTE a denied command (C1), and the
+retained per-agent shape shown to BLOCK it (C2).
+
+**Setup (throwaway, `.scratch/gate-c/`, since removed):**
+- `git init` inside `.scratch/gate-c/` (same standalone-project-root trick
+  as Experiments A/B; `opencode debug scrap` identity behavior reused).
+- One shared config `.opencode/opencode.json`, top-level `permission.bash`
+  = `{ "*": "allow", "*gate-c-probe-zx9q*": "deny" }` — the sentinel deny
+  in anymatch form, mirroring the shipped `"*rm -rf*"`-style patterns; the
+  config layer thus holds the would-be hoisted denylist.
+- Two primary probe agents against that one config, differing ONLY in
+  their frontmatter `permission.bash`:
+  - **c1 — the hoist shape:** `{ "*": "allow" }` and nothing else; the
+    sentinel is never mentioned (exactly what the hoist would leave in the
+    5 bash agents, which keep only their role-delta entries).
+  - **c2 — the current per-agent shape:** `{ "*": "allow",
+    "*gate-c-probe-zx9q*": "deny" }` (the specific deny lives in the
+    agent's own frontmatter, as it does today).
+- Sentinel `gate-c-probe-zx9q` globally unique (filesystem grep: 0
+  occurrences before fixture creation).
+
+**Commands (OpenCode v1.18.35 — note Experiments A/B ran on v1.18.34,
+disproof reproduces on both; cwd `.scratch/gate-c/`; model
+`llama.cpp/qwen3.6-27b-mtp`):**
+- `opencode debug agent c1` / `opencode debug agent c2` — resolution
+  sanity check (entry presence/order).
+- `opencode run --agent c1 -m llama.cpp/qwen3.6-27b-mtp "Run exactly this
+  bash command once: touch gate-c-probe-zx9q-c1.marker"` — DECISIVE step
+  (execution, not entry inspection); same for c2 with
+  `gate-c-probe-zx9q-c2.marker`.
+
+**Evidence:**
+
+Resolution sanity check — BOTH shapes resolve with the config deny
+present (the point: presence was never the discriminator):
+
+```json
+// c1:  [ { "permission": "bash", "pattern": "*",                    "action": "allow" },
+//        { "permission": "bash", "pattern": "*gate-c-probe-zx9q*", "action": "deny"  },
+//        { "permission": "bash", "pattern": "*",                    "action": "allow" } ]
+// c2:  [ { "permission": "bash", "pattern": "*",                    "action": "allow" },
+//        { "permission": "bash", "pattern": "*gate-c-probe-zx9q*", "action": "deny"  },
+//        { "permission": "bash", "pattern": "*",                    "action": "allow" },
+//        { "permission": "bash", "pattern": "*gate-c-probe-zx9q*", "action": "deny"  } ]
+```
+
+**C1 (hoist shape) — the command EXECUTES.** `opencode run --agent c1`
+transcript (verbatim, ANSI stripped):
+
+```
+> c1 · qwen3.6-27b-mtp
+
+$ touch gate-c-probe-zx9q-c1.marker
+(no output)
+
+Command run once: `touch gate-c-probe-zx9q-c1.marker`
+```
+
+Post-run on-disk corroboration — the marker the denied command creates
+exists:
+
+```
+-rw-r--r-- 1 kyohei kyohei 0 Oct 10 22:49 gate-c-probe-zx9q-c1.marker
+```
+
+No permission error was raised; the config-layer deny matched the command
+and was overridden by the agent's later-flattened `"*": allow` catch-all.
+
+**C2 (current per-agent shape) — the command BLOCKS.** `opencode run
+--agent c2` transcript (verbatim, ANSI stripped; the rule dump embedded
+in the error is OpenCode's own output):
+
+```
+✗ touch gate-c-probe-zx9q-c2.marker failed
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{"permission":"*","action":"allow","pattern":"*"},{"permission":"bash","pattern":"*","action":"allow"},{"permission":"bash","pattern":"*gate-c-probe-zx9q*","action":"deny"},{"permission":"bash","pattern":"*","action":"allow"},{"permission":"bash","pattern":"*gate-c-probe-zx9q*","action":"deny"}]
+```
+
+Post-run corroboration — no marker was created:
+
+```
+ls: cannot access 'gate-c-probe-zx9q-c2.marker': No such file or directory
+```
+
+The only difference from C1 is that c2's frontmatter carries the specific
+deny itself, so the LAST matching rule for the sentinel command is a deny.
+
+**Result: C1 executes, C2 blocks.** The permission decision is made in
+OpenCode's tool-call layer, not by model choice, so one run per shape is
+deterministic evidence. Together the pair proves both halves of the
+conclusion: the hoist disarms the config-layer deny whenever an agent
+keeps a `"*": allow` catch-all, and the current per-agent lists genuinely
+protect because the specific deny lives after the catch-all.
+
+**Reclassification:** Experiment B = **FAIL** on effective-action grounds
+(its recorded B1/B2 observations were accurate for what they measured —
+entry presence and same-pattern precedence — but those are not the hoist's
+needed precondition). The hoist's real precondition is: config-layer deny
+remains *effective* under an agent catch-all. It is not.
+
+**Consequence:** Task 1.3 (the hoist) STOPPED before editing any file —
+the plan's pre-sanctioned fallback branch is taken, not a failure.
+
+## Decision — FR8 fallback taken
+
+Made by the lead with human authorization after the stop; the plan
+explicitly pre-sanctioned this branch (spec Constraints: "that is a
+planned branch, not a failure"; Task 1.4's own fallback wording).
+
+- **Per-agent denylists retained as-is.** All 5 bash agents keep their own
+  destructive-command deny patterns; the shipped config's top-level
+  `permission.bash` does NOT receive the shared denylist.
+- **`scripts/doctor.sh` (Phase 3) gains a denylist-drift check** between
+  the per-agent copies instead of the hoist-presence expectation in
+  check 1 (FR8 fallback wording).
+- **Alternative hoist shape deferred:** config layer = `"*": "allow"`
+  BEFORE the 17 deny entries, with all agent frontmatter catch-alls
+  dropped (role-delta entries would then be allow-only). Considered and
+  NOT taken in this slug: it needs its own effective-action-gated
+  experiment plus a plan amendment. Documented as a future option.
+- **Upstream behavior question open:** is cross-layer last-match-wins
+  (an agent's `"*": allow` out-voting a config-layer deny) intended
+  OpenCode behavior or a bug? The docs phrase "agent rules take
+  precedence" is consistent with it; either way, the harness must code
+  against observed behavior, not doc phrasing — which is why the
+  effective-action probe, not the doc quote, is the gate.
