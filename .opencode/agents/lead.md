@@ -25,6 +25,7 @@ permission:
     "*push --force*": deny
     "*push -f *": deny
     "*branch -D*": deny
+    "*git push*": deny
     "git merge *": deny
     "git merge task/*": allow
     "git mv *": deny
