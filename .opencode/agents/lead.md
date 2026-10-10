@@ -8,6 +8,7 @@ permission:
     "git push --force*": deny
     "git push -f*": deny
     "git push origin +*": deny
+    "git push*": deny
     "rm -rf*": deny
     "rm -fr*": deny
     "git reset --hard*": deny
