@@ -340,7 +340,7 @@ Three commands sit outside the per-phase Implementation ↔ Feedback loop — on
 
 | Agent | Mode | Role | Permissions |
 |---|---|---|---|
-| `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask |
+| `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask · task: explore/scout only |
 | `planner` | primary | Transcribes an aligned design concept into docs, structured as vertical slices | edit: allow · bash: deny · webfetch: allow |
 | `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (`phase-branches.md` only, by convention) · bash: allow with destructive-command + scope denylist · webfetch: deny · task: whitelisted 5 subagents only |
 | `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure; may be pointed at a git worktree for parallel work | edit/bash/webfetch: allow, with force-push/`rm -rf`/`reset --hard`/etc. hard-denied · task: deny |
