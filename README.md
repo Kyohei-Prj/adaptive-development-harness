@@ -452,6 +452,8 @@ opencode
 
 Copy the agent, command, and skill files into `.opencode/`, `AGENTS.md` and `.gitignore` into the project root, and `scripts/autorun.sh` if you plan to use headless automation (see [Directory Structure](#directory-structure) for the full layout, and [Prerequisites](#prerequisites) for what needs to be installed first). The `.gitignore` belongs in the copy list even though it isn't a workflow file: it keeps the harness's own ephemeral artifacts — `.worktrees/`, `.scratch/`, `**/autorun.log` — out of your commits.
 
+The project-level `opencode.json` shipped with this harness intentionally contains only `$schema` and the `watcher.ignore` list. Anything machine-specific — lsp/formatter toggles, MCP servers, provider definitions, compaction settings — belongs in your global OpenCode config (`~/.config/opencode/opencode.json`), which you maintain yourself; the harness never touches it.
+
 ### Step 1.5 (optional) — Grill first
 
 For a small app like this, planning questions alone are probably enough. For something with more design ambiguity, you'd run:
@@ -619,7 +621,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Run `/grill` before `/plan` for anything with real design ambiguity.** For a one-line bug fix or trivial task, skip straight to `/plan` — the planner will just ask a question or two directly. For anything where you're not sure yet what "done" looks like, grill first. Close the grill session before opening `/plan`; don't try to plan inside the same session.
 
-**Consider disabling `compaction.auto` in `opencode.json`, or treating it as a fallback only.** The default config in this repo has it on. Pocock's workflow deliberately prefers starting a fresh session (deterministic, empty state) over auto-summarizing a long one (lossy, less predictable) — closing sessions between stages already gets you most of this. If you want to lean further into that, you can disable it and rely entirely on stage boundaries for context resets, but it's a genuine trade-off (auto-compaction is a decent safety net for a session that ran long unintentionally) — this repo doesn't force either choice.
+**Consider disabling `compaction.auto` in `opencode.json`, or treating it as a fallback only.** Pocock's workflow deliberately prefers starting a fresh session (deterministic, empty state) over auto-summarizing a long one (lossy, less predictable) — closing sessions between stages already gets you most of this. If you want to lean further into that, you can disable it and rely entirely on stage boundaries for context resets, but it's a genuine trade-off (auto-compaction is a decent safety net for a session that ran long unintentionally) — this repo doesn't force either choice.
 
 **Pin `phase-reviewer` to your strongest available model** (`model:` field in its frontmatter) if your provider setup has a cost/capability tier, and leave `task-implementer`/`issue-resolver` on your faster default. Verify it's actually taking effect — some OpenCode versions have had subagents-via-Task inherit the parent's model instead of their own; a quick `opencode agent list` or a deliberately-wrong-answer test will confirm.
 
