@@ -313,6 +313,12 @@ planned branch, not a failure"; Task 1.4's own fallback wording).
   dropped (role-delta entries would then be allow-only). Considered and
   NOT taken in this slug: it needs its own effective-action-gated
   experiment plus a plan amendment. Documented as a future option.
+- **Stopped Task 1.3 secondary finding:** planner, doc-updater and grill
+  declare `bash: deny` as a string, not a map — under the hoist each would
+  have shown a non-empty but semantically inert entry-diff (the shared
+  config entries merging into their wholesale-denied resolutions); Phase 3's
+  doctor.sh frontmatter fallback must therefore handle both the string
+  (`bash: deny`) and map shapes of the `bash` key.
 - **Upstream behavior question open:** is cross-layer last-match-wins
   (an agent's `"*": allow` out-voting a config-layer deny) intended
   OpenCode behavior or a bug? The docs phrase "agent rules take
