@@ -90,14 +90,14 @@ holes — and grill's subagent reach is whitelisted. (Closes defects: lead
 missing plain push deny; implementer pair missing branch -D; grill
 over-broad task permission.)
 **Tasks:**
-- [ ] Task 3.1: lead.md frontmatter — add plain `git push*` deny alongside
+- [x] Task 3.1: lead.md frontmatter — add plain `git push*` deny alongside
       existing entries. (acceptance: pattern present; existing entries and
       scoped merge/mv allows untouched) [type: smoke]
-- [ ] Task 3.2: task-implementer.md + issue-resolver.md frontmatter — add
+- [x] Task 3.2: task-implementer.md + issue-resolver.md frontmatter — add
       `git branch -D*` **prefix** and `*git branch -D*`-style **anymatch**
       entries. (acceptance: both forms in both files, mirroring the existing
       dual-pattern convention) [type: smoke]
-- [ ] Task 3.3: grill.md — `task: {"*": deny, "explore": allow, "scout":
+- [x] Task 3.3: grill.md — `task: {"*": deny, "explore": allow, "scout":
       allow}`; one body line explaining the whitelist (scout may be absent
       in some installs — harmless no-op); README agents-table row updated.
       (acceptance: frontmatter matches exactly; README row shows the
