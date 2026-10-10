@@ -25,8 +25,8 @@ Before delegating any task for a new phase N of slug `<slug>`:
 
 This file is what `phase-reviewer` reads later for its diff baseline — a
 missing or skipped row means review can't determine what changed in this
-phase versus what changed in a prior one. Commit it along with the rest of
-the phase's changes; don't leave it staged-but-uncommitted.
+phase versus what changed in a prior one. Commit it in your single docs-only
+phase-complete commit (`git add docs/<slug>/`); don't leave it staged-but-uncommitted.
 
 ## B. Parallel task execution (worktrees)
 
