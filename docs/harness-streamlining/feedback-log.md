@@ -487,3 +487,84 @@
 - feedback-log.md: this entry.
 - (NB3 README.md/AGENTS.md and NB4 README.md fixes landed separately in a391f2b
   and e8639bb by issue-resolver; not re-touched here.)
+
+---
+
+## 2026-10-11 — Finalize check (whole slug, Phases 1–5)
+
+Scope: `/finalize harness-streamlining` — whole-slug review across all 5 phases
+(diff `harness-streamlining..HEAD`, 39 commits, 20 files). Per finalize policy,
+the non-blocking findings below are LOGGED, not fixed.
+
+**Verdict: merge-ready — 0 blocking issues; no issue-resolver runs; no
+resolutions applied.**
+
+**Issues found:**
+- Testing compliance (verified at final state, not on paper): all 19 tasks'
+  evidence coherent at HEAD — Phase 1 gate verdicts in gate-experiments.md,
+  Task 1.3 pre-sanctioned FR8 skip honored; Phase 2 AGENTS.md 32 lines ≤ 80,
+  all 13 README pointers resolve; Phase 3 doctor.sh 10 checks green/exit 0,
+  arg guard exit 2, sim FAIL keeps scratch / green re-run cleans it (all
+  re-run live this session); Phase 4 prose pass behavior-preserving, no
+  `<fill in` left; Phase 5 README counts 8/10/4/2 match disk, agents table ↔
+  doctor golden cross-checked.
+- Task 5.2 acceptance checklist completed in the finalize report — all
+  criteria ✓ (dogfooding: phases 1–5 passed, finalize clean).
+- Closed at finalize: Phase 3-era NB2 disposition ("effective-action C1/C2
+  re-check to be executed at /finalize") — EXECUTED on installed v1.18.35:
+  C1 (hoist shape) executes, C2 (shipped per-agent deny shape) blocks. FR8-
+  fallback protection model holds on current version.
+- Non-blocking findings (logged, not fixed — reviewer's suggested edits
+  recorded for whoever picks these up):
+  1. `README.md:761` misattributed citation: "the harness-streamlining spec
+     (FR6)" should be `docs/harness-defects/spec.md` FR6 (true referent; the
+     fact stated is correct, the attribution wrong; introduced by Task 2.1's
+     relocation df61dd3, missed by the 4.4 sweep and the Phase 5 pass).
+     Suggested: retarget the citation to the harness-defects spec, or drop
+     the FR number.
+  2. `docs/harness-streamlining/spec.md:101` commands-byte-identical clause
+     is literally false as annotated: a 4th command file (`autorun.md`,
+     072b3e8, Phase 2 NB1 — review-approved) differs besides the three named
+     from a4b98b9. Suggested: widen the exemption to name both retargets.
+  3. The finalize C1/C2 re-check's durable trace: evidence currently lives
+     only in gitignored `.scratch/gate-f/`. Suggested: append a dated
+     "Finalize re-check (2026-10-11, v1.18.35)" note to gate-experiments.md;
+     fixture deletion is a pending USER action (`rm -rf` hard-blocked for
+     agents).
+  4. `docs/harness-streamlining/spec.md:91–107` — seven acceptance-criteria
+     checkboxes still `[ ]`. Defensible under 5.2's "complete in the finalize
+     report" wording, but leaves the spec reading as never-verified post-
+     merge. Suggested: tick them citing this entry.
+
+**Deferred issues (confirmed but not fixed this round):**
+- All prior deferrals audited at finalize — all remain legitimately deferred:
+  NB5b's three prose enumerations still match the frontmatter six-command
+  set (drift risk only, no active defect); doctor self-test harness /
+  check-3 widening / check-8 minified false-red untouched by Phases 4–5;
+  italic-pointer check decline coherently argued (Phase 5 NB1 decision);
+  Phase 1 NB3 `/tmp` file closed by user; upstream last-match-wins question
+  is OpenCode-side.
+
+**Risks for future phases:**
+- Five copies of the deny-set; only the frontmatter goldens are drift-checked
+  — AGENTS.md:22, README:688, README:713 unguarded (NB5b class).
+- 13 AGENTS.md→README pointers have zero guard against README heading
+  renames — needs an owner in the next harness-touching slug (fits a future
+  doctor check; NB1 backlog).
+- Effective-action protection is version-contingent; the C1/C2 re-check has
+  no standing owner on OpenCode version bumps.
+- Merge mechanics: phase branches stack 1←2←3←4←5; merge to main is the
+  user's call; `/archive` decision after merge; push-hardening cluster item
+  (README:761) still awaiting user decision.
+- `.scratch/gate-f/` persists in the working tree (gitignored; violates the
+  gate experiments' own nothing-survives rule; user cleanup).
+- Post-merge reminders to record: run `/archive harness-streamlining` after
+  merging; user decisions pending on the push-hardening cluster and the
+  `.scratch/gate-f/` cleanup.
+
+**Doc changes applied:**
+- feedback-log.md: this entry.
+- No other doc or code touched — finalize policy: findings logged, not fixed
+  (suggested edits for findings 1–4 recorded above; spec.md:101 annotation
+  and the acceptance-criteria checkboxes left as-is pending user/reviewer
+  action).
