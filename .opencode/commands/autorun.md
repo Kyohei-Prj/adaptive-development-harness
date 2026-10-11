@@ -4,7 +4,7 @@ agent: lead
 ---
 Run the full Implementation → Feedback cycle for every phase in docs/$1/implementation-plan.md automatically, inside this one session.
 
-Follow the `phase-lifecycle` skill for the mechanical procedures below — this command's policy: no confirmation within a phase (resolve all blocking/non-blocking issues automatically), one checkpoint between phases. For a long plan, prefer `scripts/autorun.sh` instead — it gets the same hands-off behavior with a genuinely fresh session per phase rather than one accumulating session for the whole run (see AGENTS.md's "Smart zone / dumb zone" section).
+Follow the `phase-lifecycle` skill for the mechanical procedures below — this command's policy: no confirmation within a phase (resolve all blocking/non-blocking issues automatically), one checkpoint between phases. For a long plan, prefer `scripts/autorun.sh` instead — it gets the same hands-off behavior with a genuinely fresh session per phase rather than one accumulating session for the whole run (README → *Tips & Conventions, "Smart zone / dumb zone"*).
 
 Steps:
 1. Read docs/$1/implementation-plan.md and identify all phases in order.
