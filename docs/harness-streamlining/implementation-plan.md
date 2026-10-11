@@ -79,13 +79,13 @@ claim executable: `scripts/doctor.sh` runs 8 static checks + invariant-
 marker presence + the pure-git worktree simulation, and exits 0 on the
 post-diet repo — a single command any future phase can consult.
 **Tasks:**
-- [ ] Task 3.1: doctor.sh skeleton + flow: check registry, per-check
+- [x] Task 3.1: doctor.sh skeleton + flow: check registry, per-check
       pass/fail output, non-zero exit on any failure, run from repo root or
       any cwd; `.scratch/doctor-sim/` kept on fail / cleaned on pass; header
       doc comment ("harness-repo-only; never shipped; no CI in v1").
       (acceptance: exit codes correct on an artificially-failing check;
       fixture cleanup behavior verified both ways) [type: tdd]
-- [ ] Task 3.2: The 8 checks: (1) role-table permissions via
+- [x] Task 3.2: The 8 checks: (1) role-table permissions via
       `opencode debug config` with frontmatter+config-parse fallback (pick
       the fallback if slug 1's open question shows debug config absent);
       (2) no `<fill in` under `.opencode/`; (3) no `git add -A`;
@@ -95,17 +95,17 @@ post-diet repo — a single command any future phase can consult.
       Each check verified against a deliberately-violated fixture copy in
       `.scratch/`. (acceptance: all 8 green on repo; each individually
       demonstrated red on its fixture) [type: tdd]
-- [ ] Task 3.3: Positive-presence check + markers: add
+- [x] Task 3.3: Positive-presence check + markers: add
       `<!-- invariant: … -->` comments to phase-lifecycle part B's
       commit-before-report and clean+landed-verification steps; doctor
       asserts marker presence. (acceptance: check green; deleting a marker
       locally flips it) [type: tdd]
-- [ ] Task 3.4: Pure-git worktree simulation: scripted init repo in
+- [x] Task 3.4: Pure-git worktree simulation: scripted init repo in
       `.scratch/` exercising slug 1's part-B flow (dirty → refuse; commit+
       merge → remove; docs-only lead commit); wired into doctor.sh flow.
       (acceptance: simulation passes on correct flow; a fixture that drops
       the verification step makes it fail) [type: tdd]
-- [ ] Task 3.5: README: doctor.sh usage section (what it checks, when to
+- [x] Task 3.5: README: doctor.sh usage section (what it checks, when to
       run it, harness-only status, why no CI in v1); copy-instructions list
       still excludes scripts/doctor.sh. (acceptance: README accurate;
       doctor.sh absent from the shipped-file copy list) [type: smoke]
