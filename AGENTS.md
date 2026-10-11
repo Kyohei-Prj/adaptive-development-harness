@@ -12,7 +12,7 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 
 **Automated alternative:** `/autorun <slug>` (uses the `lead` agent) runs the full Implementation → Feedback cycle for all phases. Within a phase it does not pause for confirmation — blocking/non-blocking issues are resolved automatically (risks are logged, not fixed; anything skipped after a FAIL is logged as deferred, not dropped). It pauses once per phase at a checkpoint before starting the next phase, and stops immediately if any subagent reports FAIL or a parallel-task merge conflict occurs.
 
-**Fully hands-off alternative:** `scripts/autorun.sh <slug>` — an external shell script (not an in-chat command) that drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` invocations, one process per phase. No checkpoints, no session ever accumulates across phases, output logged to `docs/<slug>/autorun.log`. Prefer this over `/autorun` for long plans — see the "Smart zone / dumb zone" section below for why.
+**Fully hands-off alternative:** `scripts/autorun.sh <slug>` — an external shell script (not an in-chat command) that drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` invocations, one process per phase. No checkpoints, no session ever accumulates across phases, output logged to `docs/<slug>/autorun.log`. Prefer this over `/autorun` for long plans — see README's Tips & Conventions ("Smart zone / dumb zone").
 
 **Before merging to main:** run `/finalize <slug>` — re-checks the whole feature branch as one unit (not phase-by-phase) to catch integration issues no single phase review would see.
 
@@ -23,18 +23,6 @@ This project uses a 4-stage AI-driven workflow on top of OpenCode.
 ## Context hygiene rule
 Any agent doing actual content edits during Implementation or Feedback must be a subagent invoked via Task, not the primary session. The primary session
 holds summaries, not diffs. `lead`'s bookkeeping — the `phase-branches.md` rows and `implementation-plan.md` checkbox flips — is the one designed exception.
-
-## Parallel task isolation
-Tasks tagged `[parallel-with: ...]` in `implementation-plan.md` do NOT share
-the main working tree. `lead` gives each one its own git worktree under
-`.worktrees/<slug>-<task-id>` on its own branch, delegates to a separate
-`task-implementer` instance pointed at that directory, and merges each
-branch back into the phase branch sequentially once all tasks in the group
-finish — never in parallel, and never automatically past a merge conflict
-(that always stops and waits for the user). The shipped `.gitignore` already
-lists `.worktrees/` (for a project adopting the harness into an existing
-repo, it's one of the three lines to merge in); it's also already excluded
-from `opencode.json`'s file watcher.
 
 ## Stay inside the project directory
 `lead`, `task-implementer`, and `issue-resolver` are all instructed to never
@@ -74,65 +62,6 @@ the narrow patterns its own procedures actually use (`git merge task/*`,
 If a task or issue fix seems to genuinely need a denied command, the agent
 is instructed to stop and report rather than find a workaround — that
 decision stays with you.
-
-**Each denied pattern is listed twice: once as a prefix match (`"rm -rf*"`)
-and once as a match-anywhere-in-the-string (`"*rm -rf*"`).** A prefix-only
-pattern only catches the dangerous command when it's the first thing in the
-string — it does NOT catch `cd /tmp && rm -rf uvtest`, since that string
-starts with `cd`, not `rm -rf`. Compound commands chained with `&&`/`;`/`|`
-are extremely common (an agent probing an environment before committing to
-a real task will naturally write multi-step one-liners), so a denylist that
-only checks the prefix has a real gap. The match-anywhere versions close it.
-One exception to the dual-listing rule: the `task-implementer`/`issue-resolver`
-force-push family ships without an exact anymatch counterpart — `git push origin +*`
-has none, and `*push -f *` demands a trailing space — so compound variants of exactly
-those patterns are not fully covered there. Closing it (a `"*git push*"` deny on the
-pair, as `lead` already carries) is a queued decision tracked with the push-hardening
-cluster, deliberately not taken in this slug: spec FR6 scoped the pair to `branch -D`
-plus force-push variants, and prior reviews routed the broader hardening to a
-user/harness-streamlining decision.
-
-**Why allow-by-default instead of a narrow allowlist with `ask` as the
-fallback:** an allowlist only covers the commands someone thought to list
-in advance, and `ask` requires a human to answer — which works fine
-interactively, but silently stalls forever when an agent is invoked
-headlessly (`opencode run`, as `scripts/autorun.sh` does). Every agent that
-might run in that headless path uses allow-by-default-with-denylist (or,
-like `doc-updater`, denies bash outright — full deny stalls nothing), not
-allowlist-with-ask-fallback, for exactly this reason. `grill` is the one
-deliberate exception (`webfetch: ask`) — it's interactive by design and
-never invoked headlessly, so `ask` is correct there.
-
-## Smart zone / dumb zone
-LLM reasoning degrades well before the advertised context limit — treat
-~100K tokens as a practical ceiling for any single session, not the vendor's
-max. Watch your context usage (a token counter in the status line, or
-`opencode`'s own usage indicator) and start a fresh session rather than let
-a session run long:
-
-- Close the `grill` session before starting `/plan`. Close the planning
-  session before starting `/implement-phase`. Each subagent invocation via
-  Task already gets its own fresh context by construction — don't undermine
-  that by keeping one giant primary session open across an entire feature.
-- Prefer starting a new session over relying on auto-compaction/summarization
-  when a session gets long. A fresh session reading the committed docs is a
-  deterministic, repeatable starting point; a compacted summary is not, and
-  can quietly drop details that matter later. If `compaction.auto` is
-  enabled in `opencode.json`, treat it as a safety net for sessions that ran
-  longer than intended, not as a substitute for closing sessions between
-  stages.
-- This is also why `lead` delegates all content edits rather than making
-  them itself: keeping the orchestrating session small is what makes multi-phase
-  runs viable at all — **with one exception.** The in-chat `/autorun`
-  command still runs every phase inside one continuous `lead` session (a
-  single checkpoint pause between phases, no restart), so on a long plan its
-  own session can drift toward the smart-zone ceiling even though it never
-  holds diffs. For a plan with many phases, prefer `scripts/autorun.sh`
-  instead — it drives `/implement-phase-auto`, `/review-phase-auto`, and
-  `/finalize` via separate `opencode run` calls, one process per phase, so
-  every phase's orchestrating session is genuinely fresh rather than
-  accumulated. `/autorun` remains a reasonable choice for short plans where
-  staying in the loop matters more than long-run context hygiene.
 
 ## Docs
 All planning docs for a unit of work live under `docs/<slug>/`. See the `planning-docs` skill for templates and task type tag rules.
