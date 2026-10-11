@@ -1,5 +1,69 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "lsp": true,
+  "formatter": true,
+  "compaction": {
+    "auto": true,
+    "prune": true
+  },
+  "mcp": {
+    "context7": {
+      "enabled": true,
+      "headers": {
+	"CONTEXT7_API_KEY": ""
+      },
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "deepwiki": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "serena": {
+      "command": [
+	"uvx",
+	"--from",
+	"git+https://github.com/oraios/serena",
+	"serena",
+	"start-mcp-server",
+	"--context",
+	"ide-assistant",
+	"--project",
+	".",
+	"--enable-web-dashboard",
+	"false"
+      ],
+      "enabled": true,
+      "environment": {
+	"PYTHONUNBUFFERED": "1"
+      },
+      "type": "local"
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": false
+    },
+  },
+  "provider": {
+    "llama.cpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama-server (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8089/v1"
+      },
+      "models": {
+        "local-llm": {
+          "name": "Local-LLM",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    }
+  },
   "watcher": {
     "ignore": [
       "node_modules/**",
