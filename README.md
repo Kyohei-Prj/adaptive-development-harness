@@ -21,6 +21,7 @@ never-review-in-the-implementer's-context). See [Tips & Conventions](#tips--conv
   - [Stage 2 — Implementation](#stage-2--implementation)
   - [Stage 3 — Feedback](#stage-3--feedback)
 - [Maintenance Commands](#maintenance-commands)
+- [doctor.sh — static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only)
 - [Agents Reference](#agents-reference)
 - [Commands Reference](#commands-reference)
 - [Task Type System](#task-type-system)
@@ -341,6 +342,40 @@ Three commands sit outside the per-phase Implementation ↔ Feedback loop — on
 
 ---
 
+## doctor.sh — static self-check suite (harness repo only)
+
+This repo makes a pile of *structural* claims about itself — denylist copies stay in sync, no shipped prompt suggests bulk staging, `AGENTS.md` stays a ≤80-line navigation file, README file counts match disk, `.gitignore` keeps protecting the scratch dirs, load-bearing procedure steps survive every prose-condensation pass — and prose claims rot silently: any refactor can break one and nothing notices. `scripts/doctor.sh` turns each claim into an executable check, so "the harness is still self-consistent" is one green/red command instead of a grep-and-pray exercise. It takes no arguments and runs from any cwd: the repo root is resolved from the script's own location, so it always checks the checkout it lives in.
+
+```bash
+scripts/doctor.sh
+```
+
+**What it checks** — nine static checks, then a simulation stage:
+
+1. **Denylist drift** — every agent file's parsed `bash:` permission stream matches the recorded golden exactly, *in order* (a deny only protects when it sits after its agent's `"*": allow` catch-all — presence in resolved output proves nothing), and the failed shared-denylist hoist stays failed: no top-level `permission` key in the shipped config.
+2. **No unfinished prompts** — no `<fill in` template placeholder anywhere under `.opencode/`.
+3. **No sweep-staging in prompts** — no `git add -A` under `.opencode/`; shipped prompts stage explicit paths only.
+4. **Scratch protection** — the harness's three shipped `.gitignore` lines (`.worktrees/`, `.scratch/`, `**/autorun.log`) are still present.
+5. **README honesty** — the Minimal-footprint counts and the directory tree's `scripts/` listing match the files on disk.
+6. **`grill` containment** — grill's task whitelist stays within `{explore, scout}`, never an implementation- or review-side subagent.
+7. **AGENTS.md budget** — ≤80 lines; past that budget it's a tax, not a map.
+8. **Watcher entries** — the 11 shipped `watcher.ignore` entries are still present in `.opencode/opencode.json`; presence-only, because the rot this guards is an accidental removal, not a deliberate addition.
+9. **Invariant markers** — the two `<!-- invariant: … -->` markers in the `phase-lifecycle` skill are present: the positive-presence counterweight to the absence-checks, so a condensation pass can't silently *delete* a required step.
+
+Then the **worktree-flow simulation** exercises the git discipline of `phase-lifecycle` part B against a throwaway `git init` repo, asserting four scenarios: a dirty worktree → cleanup refuses; commit + sequential merge → the gate passes and cleanup lands the merge; a docs-only lead commit is correctly discriminated from a mixed docs+code commit; committed-but-unmerged work is never cleaned up. Pure git throughout — it never invokes `opencode` and never touches the harness repo's own git state. Nothing fails fast: the complete list of broken steps is the diagnosis.
+
+**Exit codes and scratch lifecycle.** `0` — all green; the simulation's scratch dir (`.scratch/doctor-sim/`) is cleaned up. `1` — at least one step failed; `.scratch/doctor-sim/` is **kept**, fixture tree and decision trace included, for diagnosis. `2` — usage/environment error (an argument was given, the script isn't inside a harness-repo checkout, or `DOCTOR_EXTRA_CHECKS` names a missing file).
+
+**When to run it.** After any structural edit to `.opencode/` (agents, commands, skills, config), `AGENTS.md`, the three shipped `.gitignore` lines, or anywhere the README states a file count — those are exactly the claims that rot. It's cheap — measured ~0.3 s wall on this machine, most of it the simulation's throwaway git repo — so during harness development or a dogfooding phase run, consult it as the one green/red answer to "did my edit break a self-consistency claim?", not a release-day ceremony.
+
+**Extending or demonstrating it.** Two environment-variable seams exist so neither artificial pass/fail fixtures nor deliberate broken-check demos have to be committed into the script: `DOCTOR_EXTRA_CHECKS=<path>` sources extra checks on top of the shipped ones, and `DOCTOR_SIM_SKIP_VERIFY=1` drops the simulation's verification step to reproduce the silent work-loss bug that step exists to prevent. Both are unset in normal use; the script's header comment documents them.
+
+**Harness-only, and why no CI in v1.** doctor.sh asserts claims about *this* repo's own files — a project that merely adopted the harness has nothing for it to check — so it deliberately stays out of the [copy list](#step-1--open-opencode-and-initialize) and ships to nobody. Wiring it into CI would add maintenance surface with no consumer yet; the decision and its rejected alternatives are recorded under "Key decisions & trade-offs" in `docs/harness-streamlining/architecture.md`.
+
+**Requirements:** bash ≥ 4.4 and git ≥ 2.32 (the version the simulation's hermetic `GIT_CONFIG_*` config isolation reaches); nothing else.
+
+---
+
 ## Agents Reference
 
 | Agent | Mode | Role | Permissions |
@@ -652,7 +687,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **The destructive-command denylist is intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, and `git branch -D` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
-**That denylist is deliberately duplicated across the 5 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check to keep the copies in sync is planned (Phase 3 — not shipped yet).
+**That denylist is deliberately duplicated across the 5 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
 
 **`/finalize` and `/archive` are manual, on purpose.** Nothing in this workflow merges to main or archives docs automatically — `/finalize` prepares the branch, you merge it, then `/archive` cleans up. `lead` will remind you of both at the natural points (end of `/autorun`, end of the last `/review-phase`), but won't run either without you invoking them.
 
