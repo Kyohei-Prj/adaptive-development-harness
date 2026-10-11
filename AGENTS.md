@@ -20,7 +20,7 @@
 - **Context hygiene** — content edits happen only in Task subagents; primary sessions hold summaries, not diffs (`lead`'s bookkeeping edits are the sole exception). README → *Tips & Conventions, "Smart zone / dumb zone"*.
 - **Stay inside the project directory** — nothing outside the repo; scratch work goes in `.scratch/` at the project root. README → *Tips & Conventions, "Agents stay inside the project directory, on purpose"*.
 - **Destructive-command denylist** — force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, `git branch -D` are hard-denied for every bash agent regardless of task phrasing; per-agent permission tables: README → *Agents Reference* and `.opencode/agents/*.md`. If a task genuinely needs a denied command: stop and report — that decision stays with the user. README → *Tips & Conventions* (why the denylist is hardcoded, why copies aren't DRYed), *Troubleshooting* (dual prefix/anymatch patterns).
-- **Commit explicit paths** — each agent commits only its own work as its end-of-task step; never `git add .`/`-A`; `lead` commits only `docs/<slug>/`. README → *Tips & Conventions, "Commit once manually"*.
+- **Commit explicit paths** — each agent commits only its own work as its end-of-task step; never `git add .`/`-A`; `lead` commits only `docs/<slug>/`. README → *Stage 2*.
 - **Deferred, not dropped** — issues declined at review and tasks skipped after a FAIL are logged in `feedback-log.md` and resurface as a heads-up in later phases. README → *Stage 3*.
 
 # Behavioral Guidelines
