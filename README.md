@@ -110,7 +110,7 @@ User idea
 - **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
 - **Mechanics live in one place** — phase-branch setup, worktree-isolated parallel execution, and issue-resolution delegation are the same underlying procedures whether triggered by `/implement-phase`, `/autorun`, or the headless `*-auto` commands. They're defined once in the `phase-lifecycle` skill and referenced everywhere, not copy-pasted per command — six near-identical copies is exactly the situation that lets one silently drift from the rest.
 - **Document-first, but not permanent** — architecture, spec, and implementation plan are the source of truth during a unit of work. They evolve via the Feedback stage, never silently — and once a slug's phases are all merged, consider archiving `docs/<slug>/` rather than leaving it live to go stale and mislead a future session.
-- **Minimal footprint, not minimal correctness** — 8 agent files, 10 command files, 4 skills, 1 script. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
+- **Minimal footprint, not minimal correctness** — 8 agent files, 10 command files, 4 skills, 2 scripts. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
 
 ---
 
@@ -163,7 +163,8 @@ your-project/
 │       └── phase-lifecycle/
 │           └── SKILL.md                 # Phase-branch setup, worktree/parallel-task mechanics, issue-resolution delegation, status-trailer format — single source of truth pulled by all 6 phase-related commands
 ├── scripts/
-│   └── autorun.sh                       # Fully hands-off driver: one `opencode run` process per phase, genuinely fresh context each time
+│   ├── autorun.sh                       # Fully hands-off driver: one `opencode run` process per phase, genuinely fresh context each time
+│   └── doctor.sh                        # Static self-check suite for this repo (harness-repo-only — never shipped to user projects)
 └── docs/
     ├── _templates/                      # Source templates (optional reference copies)
     ├── _archive/                        # Merged slugs' docs, moved here by /archive to avoid stale-doc drift

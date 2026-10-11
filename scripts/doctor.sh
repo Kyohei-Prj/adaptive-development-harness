@@ -78,14 +78,394 @@ register_check() { CHECKS+=("$1"); }
 # ---------------------------------------------------------------------------
 # Checks
 #
-# Task 3.2 adds the 8 static checks (role-table permissions, `<fill in`
-# absence, no `git add -A`, .gitignore entries, docs file counts, grill
-# whitelist, AGENTS.md ≤ 80 lines, shipped watcher entries) and Task 3.3
-# the invariant-marker presence check — each as one function plus one
-# register_check line, here. The skeleton ships with none registered on
-# purpose: the flow is proven by the simulation stage plus injected checks
-# (see Test seam in the header).
+# Task 3.2 landed the 8 permanent static checks below (role-table
+# permissions, `<fill in` absence, no `git add -A`, .gitignore entries,
+# README file counts, grill whitelist, AGENTS.md ≤ 80 lines, shipped
+# watcher entries); Task 3.3 adds the invariant-marker presence check the
+# same way — one function plus one register_check line, nothing else.
 # ---------------------------------------------------------------------------
+
+# CHECK 1 — role-table permissions: denylist-DRIFT check over the per-agent
+# copies (FR8 fallback branch: gate experiment B was reclassified FAIL and
+# the shared-denylist hoist was abandoned — docs/harness-streamlining/
+# gate-experiments.md Decision; the plan pre-sanctioned this adaptation).
+#
+# "In sync" here can only mean "matches its recorded golden": the shared
+# denylist is deliberately duplicated per agent-file, so the golden is a
+# per-agent ORDERED pattern→action stream parsed from each frontmatter's
+# `bash:` key. Constraints encoded (each from a recorded feedback-log risk):
+#   * ORDER, not just membership: a deny only protects when it sits AFTER
+#     its own agent's `"*": allow` catch-all (last-match-wins). A set
+#     equality would miss an in-file reorder that silently disarms every
+#     deny — the exact silent-failure class this slug exists to catch —
+#     so the golden diff is order-sensitive by construction.
+#   * Per-agent reality, not a uniform shared-17 (feedback-log NB5): the
+#     5 map-form agents differ — architecture-reviewer and phase-reviewer
+#     carry 23 denies each, task-implementer and issue-resolver 19, and
+#     lead 23 denies + 2 scoped allows (`git merge task/*`,
+#     `git mv docs/* docs/_archive/*`).
+#   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 5 above)
+#     and whole-string `bash: deny` (doc-updater, planner, grill) — the
+#     latter golden exactly ONE "string deny" line per agent (wholesale
+#     bash deny; its resolved entry-diff would be semantically inert).
+#
+# NEVER treat entry presence in `opencode debug agent` as proof of
+# protection: Experiment B's disarmed deny still *appeared* in the resolved
+# output — presence proves nothing, order does. That is also why this check
+# parses the in-repo frontmatter files as the source of truth instead of
+# `opencode debug agent`/`opencode debug config` (v1.18.35 has both, but
+# they merge the author's global ~/.config/opencode layer and would make
+# the golden machine-dependent). Parser: awk over the regular frontmatter
+# shape — deliberately no python3/PyYAML prerequisite (the README lists
+# neither); if the frontmatter ever grows irregular, the parse output
+# drifts and this check goes red loudly, never a silent skip.
+#
+# Regenerating the golden after an INTENTIONAL permission change: run this
+# check on the changed repo — the FAIL diff shows the new reality as `+`
+# lines; strip the `+`, replace the heredoc body, and re-read the
+# gate-experiments.md Decision before committing (this is the change that
+# has to have a reason).
+check_role_table_permissions() {
+  local golden live d bad=0 f files
+  golden=$(cat <<'GOLDEN'
+architecture-reviewer	map	
+architecture-reviewer	allow	*
+architecture-reviewer	deny	git push --force*
+architecture-reviewer	deny	git push -f*
+architecture-reviewer	deny	git push origin +*
+architecture-reviewer	deny	rm -rf*
+architecture-reviewer	deny	rm -fr*
+architecture-reviewer	deny	git reset --hard*
+architecture-reviewer	deny	git checkout -- .*
+architecture-reviewer	deny	git checkout --force*
+architecture-reviewer	deny	git clean -f*
+architecture-reviewer	deny	git branch -D*
+architecture-reviewer	deny	git commit *
+architecture-reviewer	deny	git add *
+architecture-reviewer	deny	git push*
+architecture-reviewer	deny	*rm -rf*
+architecture-reviewer	deny	*rm -fr*
+architecture-reviewer	deny	*reset --hard*
+architecture-reviewer	deny	*checkout -- .*
+architecture-reviewer	deny	*checkout --force*
+architecture-reviewer	deny	*git clean -f*
+architecture-reviewer	deny	*branch -D*
+architecture-reviewer	deny	*git commit *
+architecture-reviewer	deny	*git add *
+architecture-reviewer	deny	*git push*
+doc-updater	string	deny
+grill	string	deny
+issue-resolver	map	
+issue-resolver	allow	*
+issue-resolver	deny	git push --force*
+issue-resolver	deny	git push -f*
+issue-resolver	deny	git push origin +*
+issue-resolver	deny	rm -rf*
+issue-resolver	deny	rm -fr*
+issue-resolver	deny	git reset --hard*
+issue-resolver	deny	git checkout -- .*
+issue-resolver	deny	git checkout --force*
+issue-resolver	deny	git clean -f*
+issue-resolver	deny	git branch -D*
+issue-resolver	deny	*rm -rf*
+issue-resolver	deny	*rm -fr*
+issue-resolver	deny	*reset --hard*
+issue-resolver	deny	*checkout -- .*
+issue-resolver	deny	*checkout --force*
+issue-resolver	deny	*git clean -f*
+issue-resolver	deny	*push --force*
+issue-resolver	deny	*push -f *
+issue-resolver	deny	*branch -D*
+lead	map	
+lead	allow	*
+lead	deny	git push --force*
+lead	deny	git push -f*
+lead	deny	git push origin +*
+lead	deny	git push*
+lead	deny	rm -rf*
+lead	deny	rm -fr*
+lead	deny	git reset --hard*
+lead	deny	git checkout -- .*
+lead	deny	git checkout --force*
+lead	deny	git clean -f*
+lead	deny	git branch -D*
+lead	deny	*rm -rf*
+lead	deny	*rm -fr*
+lead	deny	*reset --hard*
+lead	deny	*checkout -- .*
+lead	deny	*checkout --force*
+lead	deny	*git clean -f*
+lead	deny	*push --force*
+lead	deny	*push -f *
+lead	deny	*branch -D*
+lead	deny	*git push*
+lead	deny	git merge *
+lead	allow	git merge task/*
+lead	deny	git mv *
+lead	allow	git mv docs/* docs/_archive/*
+phase-reviewer	map	
+phase-reviewer	allow	*
+phase-reviewer	deny	git push --force*
+phase-reviewer	deny	git push -f*
+phase-reviewer	deny	git push origin +*
+phase-reviewer	deny	rm -rf*
+phase-reviewer	deny	rm -fr*
+phase-reviewer	deny	git reset --hard*
+phase-reviewer	deny	git checkout -- .*
+phase-reviewer	deny	git checkout --force*
+phase-reviewer	deny	git clean -f*
+phase-reviewer	deny	git branch -D*
+phase-reviewer	deny	git commit *
+phase-reviewer	deny	git add *
+phase-reviewer	deny	git push*
+phase-reviewer	deny	*rm -rf*
+phase-reviewer	deny	*rm -fr*
+phase-reviewer	deny	*reset --hard*
+phase-reviewer	deny	*checkout -- .*
+phase-reviewer	deny	*checkout --force*
+phase-reviewer	deny	*git clean -f*
+phase-reviewer	deny	*branch -D*
+phase-reviewer	deny	*git commit *
+phase-reviewer	deny	*git add *
+phase-reviewer	deny	*git push*
+planner	string	deny
+task-implementer	map	
+task-implementer	allow	*
+task-implementer	deny	git push --force*
+task-implementer	deny	git push -f*
+task-implementer	deny	git push origin +*
+task-implementer	deny	rm -rf*
+task-implementer	deny	rm -fr*
+task-implementer	deny	git reset --hard*
+task-implementer	deny	git checkout -- .*
+task-implementer	deny	git checkout --force*
+task-implementer	deny	git clean -f*
+task-implementer	deny	git branch -D*
+task-implementer	deny	*rm -rf*
+task-implementer	deny	*rm -fr*
+task-implementer	deny	*reset --hard*
+task-implementer	deny	*checkout -- .*
+task-implementer	deny	*checkout --force*
+task-implementer	deny	*git clean -f*
+task-implementer	deny	*push --force*
+task-implementer	deny	*push -f *
+task-implementer	deny	*branch -D*
+GOLDEN
+)
+  files=("$REPO_ROOT"/.opencode/agents/*.md)
+  if [[ ! -e "${files[0]}" ]]; then
+    echo "no agent files under $REPO_ROOT/.opencode/agents/"
+    return 1
+  fi
+  live=$(for f in "${files[@]}"; do
+    awk -v name="${f##*/}" '
+      BEGIN { name = substr(name, 1, length(name) - 3) }
+      NR == 1 {
+        if ($0 != "---") { printf "%s\tfrontmatter-missing\t\n", name; exit }
+        infm = 1; next
+      }
+      infm && $0 == "---" { exit }
+      !infm { next }
+      !seen && /^  bash:[ \t]*$/ { seen = 1; ismap = 1; printf "%s\tmap\t\n", name; next }
+      !seen && /^  bash:[ \t]*[^ \t]/ {
+        seen = 1; v = $0; sub(/^  bash:[ \t]*/, "", v)
+        printf "%s\tstring\t%s\n", name, v; exit
+      }
+      ismap && /^    "[^"]*":[ \t]*(allow|deny|ask)[ \t]*$/ {
+        line = $0
+        match(line, /"[^"]*"/)
+        pat = substr(line, RSTART + 1, RLENGTH - 2)
+        act = line; sub(/^.*:[ \t]*/, "", act); gsub(/[ \t]+$/, "", act)
+        printf "%s\t%s\t%s\n", name, act, pat; next
+      }
+      ismap && !/^[ \t]*$/ { exit }
+    ' "$f"
+  done)
+  if [[ "$live" != "$golden" ]]; then
+    d=$(diff --label golden --label live -u <(printf '%s\n' "$golden") <(printf '%s\n' "$live") | head -n 40)
+    printf 'parsed bash-permission stream differs from the golden (ORDER-sensitive; see function header):\n%s\n' "$d"
+    bad=1
+  fi
+  # Complementary architecture invariant: the failed hoist must NOT be
+  # re-applied — the shipped config carries no top-level `permission` key
+  # (an agent's `"*": allow` catch-all out-votes config-layer denies at
+  # runtime while they still appear resolved; gate-experiments.md).
+  if grep -qE '^  "permission"' "$REPO_ROOT/.opencode/opencode.json" 2>/dev/null; then
+    echo 'top-level "permission" key present in .opencode/opencode.json — the FR8-failed denylist hoist must NOT be re-applied (gate-experiments.md Decision)'
+    bad=1
+  fi
+  return "$bad"
+}
+
+# CHECK 2 — no `<fill in` template placeholder survives into a shipped
+# prompt surface: a placeholder that reached .opencode/ is an unfinished
+# prompt pretending to be finished. node_modules/ is excluded from every
+# .opencode/ traversal (install artifact, not harness content).
+check_no_fill_in_placeholders() {
+  local out rc=0
+  out=$(grep -rnF '<fill in' "$REPO_ROOT/.opencode" --exclude-dir=node_modules 2>&1) || rc=$?
+  if (( rc == 0 )); then
+    printf '%s\n' "$out"
+    echo "'<fill in' template placeholder(s) found under .opencode/"
+    return 1
+  elif (( rc > 1 )); then
+    printf 'grep failed: %s\n' "$out"
+    return 1
+  fi
+}
+
+# CHECK 3 — no shipped prompt tells anyone to run `git add -A` (explicit
+# paths only; see AGENTS.md "Commit explicit paths"). Deliberately scoped
+# to .opencode/, unlike a whole-repo grep: the docs and this script's own
+# comments legitimately NAME the forbidden pattern while explaining why
+# it is forbidden — grepping them would false-positive on the explanation
+# (precedent: harness-defects slug's acceptance grepped .opencode/ too).
+check_no_git_add_all() {
+  local out rc=0
+  out=$(grep -rnF 'git add -A' "$REPO_ROOT/.opencode" --exclude-dir=node_modules 2>&1) || rc=$?
+  if (( rc == 0 )); then
+    printf '%s\n' "$out"
+    echo "'git add -A' found under .opencode/ (shipped prompts must stage explicit paths only)"
+    return 1
+  elif (( rc > 1 )); then
+    printf 'grep failed: %s\n' "$out"
+    return 1
+  fi
+}
+
+# CHECK 4 — .gitignore keeps the harness's three shipped lines: README's
+# copy-instructions call them "the harness's three lines" — .worktrees/
+# (parallel-task worktrees), .scratch/ (agent scratch space), and
+# **/autorun.log (unattended-run output). Losing any means git starts
+# tracking harness ephemera. /.serena/ is an editor-local extra, not part
+# of that claim, so it is NOT asserted.
+check_gitignore_shipped_entries() {
+  local bad=0 line
+  for line in '.worktrees/' '.scratch/' '**/autorun.log'; do
+    grep -qxF -- "$line" "$REPO_ROOT/.gitignore" || {
+      echo ".gitignore missing shipped line: $line"
+      bad=1
+    }
+  done
+  return "$bad"
+}
+
+# CHECK 5 — README's "Minimal footprint" counts and its directory-tree
+# scripts/ listing match the files on disk. Prose counts rot silently on
+# every file added (this check's own reason to exist: Task 3.2 made the
+# claim "1 script" false the moment doctor.sh landed).
+check_readme_file_counts() {
+  local readme="$REPO_ROOT/README.md" bad=0 claim base
+  local a c s k n_agents n_cmds n_skills n_scripts
+  claim=$(grep -oE '[0-9]+ agent files, [0-9]+ command files, [0-9]+ skills, [0-9]+ scripts?' "$readme" | head -n 1)
+  if [[ -z "$claim" ]]; then
+    echo 'README minimal-footprint sentence not found (removed, or reworded past this parse — update check_readme_file_counts)'
+    return 1
+  fi
+  read -r a c s k <<<"$(sed -E 's/([0-9]+) agent files, ([0-9]+) command files, ([0-9]+) skills, ([0-9]+) scripts?/\1 \2 \3 \4/' <<<"$claim")"
+  n_agents=$(find "$REPO_ROOT/.opencode/agents" -maxdepth 1 -name '*.md' | wc -l)
+  n_cmds=$(find "$REPO_ROOT/.opencode/commands" -maxdepth 1 -name '*.md' | wc -l)
+  n_skills=$(find "$REPO_ROOT/.opencode/skills" -mindepth 1 -maxdepth 1 -type d | wc -l)
+  n_scripts=$(find "$REPO_ROOT/scripts" -maxdepth 1 -name '*.sh' | wc -l)
+  (( a == n_agents )) || { echo "README claims $a agent files, found $n_agents"; bad=1; }
+  (( c == n_cmds )) || { echo "README claims $c command files, found $n_cmds"; bad=1; }
+  (( s == n_skills )) || { echo "README claims $s skills, found $n_skills"; bad=1; }
+  (( k == n_scripts )) || { echo "README claims $k script(s), found $n_scripts in scripts/"; bad=1; }
+  # Tree cross-check for scripts/ (the surface this task's claims cover),
+  # both directions: every real script is listed in the tree…
+  while read -r base; do
+    grep -qF -- "── $base" "$readme" || {
+      echo "scripts/$base not listed in README's directory tree"
+      bad=1
+    }
+  done < <(find "$REPO_ROOT/scripts" -maxdepth 1 -name '*.sh' -exec basename {} \;)
+  # …and every .sh the tree lists under a tree-branch glyph exists.
+  while read -r base; do
+    [[ -f "$REPO_ROOT/scripts/$base" ]] || {
+      echo "README's tree lists scripts/$base but the file is absent"
+      bad=1
+    }
+  done < <(grep -oE '(├|└)── [A-Za-z0-9._-]+\.sh' "$readme" | sed -E 's/.*── //')
+  return "$bad"
+}
+
+# CHECK 6 — grill's task whitelist stays within {explore, scout}: grill is
+# alignment-only, allowed to consult the codebase through read-only
+# subagents but never to spawn implementation- or review-side work. A
+# third allowed subagent (or a re-allowed "*") reopens that hole.
+check_grill_task_whitelist() {
+  local grill="$REPO_ROOT/.opencode/agents/grill.md" bad=0 name names
+  names=$(awk '
+    NR == 1 { if ($0 != "---") exit; infm = 1; next }
+    infm && $0 == "---" { exit }
+    !infm { next }
+    /^  task:[ \t]*$/ { t = 1; next }
+    t && /^    "[^"]*":[ \t]*(allow|deny|ask)[ \t]*$/ {
+      line = $0
+      match(line, /"[^"]*"/)
+      pat = substr(line, RSTART + 1, RLENGTH - 2)
+      act = line; sub(/^.*:[ \t]*/, "", act); gsub(/[ \t]+$/, "", act)
+      if (act != "deny") print pat
+      next
+    }
+    t && !/^[ \t]*$/ { exit }
+  ' "$grill")
+  # Any non-deny action counts as whitelisted: an `ask` on a third
+  # subagent would still let the call through the door the deny closed.
+  for name in $names; do
+    case "$name" in
+      explore | scout) ;;
+      *) echo "grill task whitelist allows unexpected subagent: $name (expected ⊆ {explore, scout})"; bad=1 ;;
+    esac
+  done
+  return "$bad"
+}
+
+# CHECK 7 — AGENTS.md stays ≤ 80 lines: it is auto-loaded navigation for
+# every session; past that budget it is a tax rather than a map.
+check_agents_md_line_limit() {
+  local n
+  n=$(wc -l < "$REPO_ROOT/AGENTS.md")
+  if (( n > 80 )); then
+    echo "AGENTS.md is $n lines (limit 80) — move prose to README and link it"
+    return 1
+  fi
+}
+
+# CHECK 8 — the shipped .opencode/opencode.json keeps its 11 watcher.ignore
+# entries. Intentionally PRESENCE-only (superset allowed), not exact-set:
+# the rot this guards is an accidental REMOVAL (dropping .git/** or
+# .worktrees/** reintroduces watcher churn); additions are legitimate
+# per-deployment config changes a PR review should judge, not this check.
+check_watcher_ignore_entries() {
+  local cfg="$REPO_ROOT/.opencode/opencode.json" bad=0 e ignore
+  local entries=(
+    'node_modules/**' 'dist/**' 'build/**' '.git/**' '**/*.min.js'
+    '**/*.map' '**/*.lock' '.venv/**' '.opencode/**' '.worktrees/**'
+    '.scratch/**'
+  )
+  ignore=$(awk '/"ignore": \[/,/\]/' "$cfg" 2>/dev/null)
+  if [[ -z "$ignore" ]]; then
+    echo 'no watcher.ignore array found in .opencode/opencode.json'
+    return 1
+  fi
+  for e in "${entries[@]}"; do
+    grep -qF -- "\"$e\"" <<<"$ignore" || {
+      echo "watcher.ignore missing shipped entry: $e"
+      bad=1
+    }
+  done
+  return "$bad"
+}
+
+register_check check_role_table_permissions
+register_check check_no_fill_in_placeholders
+register_check check_no_git_add_all
+register_check check_gitignore_shipped_entries
+register_check check_readme_file_counts
+register_check check_grill_task_whitelist
+register_check check_agents_md_line_limit
+register_check check_watcher_ignore_entries
 
 # ---------------------------------------------------------------------------
 # Simulation stage (Task 3.4 fills this in — spec FR4)
