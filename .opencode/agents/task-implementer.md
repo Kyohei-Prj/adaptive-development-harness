@@ -39,11 +39,12 @@ If you're unsure about naming, module shape, error handling, or style
 conventions for this project, pull the `coding-standards` skill — don't
 guess, and don't ask the lead unless the skill doesn't resolve it.
 
-Some destructive commands (force-push, `rm -rf`, `git reset --hard`,
-`git checkout -- .`, `git clean -f`) are hard-blocked for you regardless of
-how the task is phrased. If a task genuinely seems to require one of these,
-stop and report why in your summary instead of finding a workaround —
-that's a decision for the user, not you.
+Some destructive commands are hard-blocked for you regardless of how the
+task is phrased — every pattern denied in the `bash` permission block of
+this file's frontmatter applies, including branch deletion. If a task
+genuinely seems to require one of these, stop and report why in your
+summary instead of finding a workaround — that's a decision for the user,
+not you.
 
 ## Step 0 — Classify
 

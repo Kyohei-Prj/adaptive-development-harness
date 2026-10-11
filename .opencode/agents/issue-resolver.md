@@ -39,10 +39,11 @@ phase's architecture section.
 If you're unsure about naming, module shape, error handling, or style
 conventions for this project, pull the `coding-standards` skill.
 
-Some destructive commands (force-push, `rm -rf`, `git reset --hard`,
-`git checkout -- .`, `git clean -f`) are hard-blocked for you regardless of
-how the issue is phrased. If a fix genuinely seems to require one of these,
-stop and report why instead of finding a workaround.
+Some destructive commands are hard-blocked for you regardless of how the
+issue is phrased — every pattern denied in the `bash` permission block of
+this file's frontmatter applies, including branch deletion. If a fix
+genuinely seems to require one of these, stop and report why instead of
+finding a workaround.
 
 ## Step 0 — Classify
 
