@@ -28,10 +28,12 @@
 #   2  environment/usage error (argument given, not inside a harness-repo
 #      checkout, DOCTOR_EXTRA_CHECKS names a missing file)
 #
-# Requires: bash ≥ 4.4 (empty-array expansion under `set -u`). The Task
-# 3.4 simulation will additionally need git plumbing; the skeleton doesn't.
+# Requires: bash ≥ 4.4 (empty-array expansion under `set -u`); git ≥ 2.32
+# for the Task 3.4 simulation (`git init -b`, `git worktree`, hermetic
+# config via GIT_CONFIG_GLOBAL/GIT_CONFIG_SYSTEM).
 #
-# Layout — how later tasks plug in (Tasks 3.2/3.3 add checks, 3.4 sim):
+# Layout — how later tasks plug in (3.2/3.3 added the checks; 3.4 filled
+#   in the simulation below):
 #   A check is a zero-argument function. It reads $REPO_ROOT, prints one
 #   diagnostic line per problem it finds on failure (stdout, anything —
 #   shown indented under its FAIL line), returns 0 = pass / non-zero =
@@ -47,6 +49,13 @@
 #   ones. This is how the throwaway TDD harness drives artificial
 #   pass/fail cases without a deliberately-broken check ever being
 #   committed into this file. Unset in normal use.
+#
+#   DOCTOR_SIM_SKIP_VERIFY=1 drops the simulation's step-4 verification
+#   call — cleanup then runs blind with the force flags part B's invariant
+#   forbids. It is the executable fixture for "a condensation pass deleted
+#   the step": while it is set, the simulation MUST fail (scenarios assert
+#   via their trace that the verify step actually observed their fixtures).
+#   Demonstration/diagnosis only, like DOCTOR_EXTRA_CHECKS; unset normally.
 
 set -euo pipefail
 
@@ -496,20 +505,294 @@ register_check check_watcher_ignore_entries
 register_check check_invariant_markers
 
 # ---------------------------------------------------------------------------
-# Simulation stage (Task 3.4 fills this in — spec FR4)
+# Simulation stage (Task 3.4 — spec FR4): pure-git worktree-flow simulation
 #
-# sim_worktree_flow runs with $DOCTOR_SIM_DIR freshly created and keeps
-# every artifact it writes inside it; its pass/fail feeds both the exit
-# code and the scratch dir's keep/clean decision.
+# Exercises the git-plumbing discipline of .opencode/skills/phase-lifecycle/
+# SKILL.md part B inside a throwaway `git init` repo under $DOCTOR_SIM_DIR
+# (repo at ./repo, decision trace at ./sim-trace.log). Pure git: never
+# invokes opencode, never touches the harness repo's own git state — every
+# call goes through sim_git/sim_git_at (explicit -C target, hermetic
+# config, injected identity), because this function runs with the CALLER's
+# cwd, which may itself sit inside the harness repo: relying on cwd here is
+# the nested-git footgun the explicit targeting exists to dodge.
+#
+# Four scenarios, all always run (no fail-fast — the complete list of
+# broken scenarios is the diagnosis, mirroring how the Flow runs checks):
+#   1  dirty worktree at step-4 verification → cleanup REFUSES, worktree
+#      and branch stay put (the porcelain half of the gate).
+#   2  commit on the task branch + sequential merge into base → gate
+#      passes → `git worktree remove` + `git branch -d` succeed and the
+#      merge is landed (the prose flow's happy path; force flags never
+#      appear on it).
+#   3  the docs-only lead-commit shape (part A's phase-complete commit):
+#      a docs/-only commit reads as docs-only AND a mixed docs+code
+#      commit is detectably NOT — the invariant hinges on that
+#      discrimination, so both sides are asserted.
+#   4  committed-but-unmerged work must never be cleaned up (the
+#      merge-base half of the gate). This is also the acceptance fixture:
+#      under DOCTOR_SIM_SKIP_VERIFY=1 (header, Test seam) the sim MUST
+#      fail, and because scenarios 1/2/4 assert via sim-trace.log that the
+#      verify step actually OBSERVED their fixtures, a condensation pass
+#      that deletes the step fails loudly even where git's own dirty/
+#      merged guards would backstop the state.
+#
+# The two `<!-- invariant: ... -->` markers in SKILL.md part B are the
+# prose-side counterpart of this executable guard: check_invariant_markers
+# catches the markers vanishing; this simulation catches the behaviour they
+# encode regressing. The SKIP_VERIFY seam models the bug (blind forced
+# cleanup — exactly what the never-force-remove rule warns about), which
+# is why the sim's own verified path never uses force flags.
+#
+# Scratch lifecycle (fresh per run, kept on ANY failure, cleaned on green)
+# stays owned by the Flow section below; this body writes only under
+# $DOCTOR_SIM_DIR.
 # ---------------------------------------------------------------------------
 sim_worktree_flow() {
-  # Task 3.4 replaces this placeholder body with the pure-git worktree-flow
-  # simulation (slug 1's part-B flow). 3.1 only needs the seam exercised
-  # end to end, so the placeholder proves the directory is real and
-  # writable — a kept-on-fail dir therefore contains visible evidence of
-  # the run that kept it.
-  echo "placeholder — the pure-git worktree simulation lands in Task 3.4" \
-    > "$DOCTOR_SIM_DIR/sim-placeholder.txt"
+  local sim_repo="$DOCTOR_SIM_DIR/repo"
+  local sim_trace="$DOCTOR_SIM_DIR/sim-trace.log"
+  local sim_base=main
+  local -a failed=()
+  local scenario
+  : > "$sim_trace"
+
+  # Every git call of the simulation: explicit -C dir (never cwd — see the
+  # section header), the machine's global/system git config ignored via
+  # GIT_CONFIG_*=/dev/null (no foreign identity, signing, hooks, template
+  # dir or init.defaultBranch can vary the result), stripped git env vars,
+  # and one injected fixed identity. The repo is created with an explicit
+  # -b for the same determinism reason.
+  sim_git_at() {
+    local dir="$1"; shift
+    env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+      GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+      git -C "$dir" \
+        -c user.name='doctor-sim' -c user.email='doctor-sim@invalid' \
+        -c commit.gpgsign=false "$@"
+  }
+  sim_git() { sim_git_at "$sim_repo" "$@"; }
+  sim_say() { printf 'sim: %s\n' "$*" | tee -a "$sim_trace"; }
+
+  # Named scenario verdict lines — tee'd to $sim_trace so a kept-on-fail
+  # scratch dir contains the run's own verdicts. sim_fail annotates
+  # failures produced under the dropped-verification seam: the sim is
+  # SUPPOSED to fail under DOCTOR_SIM_SKIP_VERIFY — that IS the acceptance
+  # fixture, not a doctor.sh bug.
+  sim_pass() { sim_say "PASS  $*"; }
+  sim_fail() {
+    sim_say "FAIL  $*"
+    if [[ "${DOCTOR_SIM_SKIP_VERIFY:-0}" == "1" ]]; then
+      sim_say "      (DOCTOR_SIM_SKIP_VERIFY=1: this run is the dropped-"
+      sim_say "       verification fixture; a failing sim under it is the"
+      sim_say "       REQUIRED outcome — the step cannot vanish silently)"
+    fi
+    return 1
+  }
+  sim_say "=== pure-git part-B worktree-flow simulation (fixture repo: $sim_repo)"
+
+  # --- the part-B step-4 gate, as code ---------------------------------------
+  # Each sub-check records an OBSERVATION line in $sim_trace BEFORE it
+  # decides; the scenarios grep those lines back, so deleting a check
+  # entirely is as detectable as making it answer wrongly — git's own
+  # dirty/merged guards backstop the STATE, and that backstop must not be
+  # allowed to let a deleted check pass silently.
+  sim_porcelain_clean() {
+    local out
+    out=$(sim_git_at "$1" status --porcelain) || return 1
+    [[ -z "$out" ]]
+  }
+  sim_branch_landed() {
+    sim_git merge-base --is-ancestor "$1" "$sim_base"
+  }
+  # 0 = both checks passed, cleanup ran; 1 = REFUSED, nothing destroyed
+  # (nothing destroyed is the entire point of refusing).
+  sim_verify_and_cleanup() {
+    local wt="$1" br="$2" state
+    if [[ "${DOCTOR_SIM_SKIP_VERIFY:-0}" == "1" ]]; then
+      # The modelled condensation bug: a flow without the gate reaches for
+      # the very force flags SKILL.md's never-force-remove rule forbids —
+      # silently destroying exactly the work the missing check flagged.
+      sim_say "verify SKIPPED for $wt ($br): blind forced cleanup (DOCTOR_SIM_SKIP_VERIFY=1)"
+      sim_git worktree remove --force "$wt"
+      sim_git branch -D "$br"
+      return 0
+    fi
+    if sim_porcelain_clean "$wt"; then state=clean; else state=dirty; fi
+    sim_say "verify-porcelain $wt $state"
+    [[ "$state" == "clean" ]] || { sim_say "REFUSE cleanup of $wt — uncommitted work present"; return 1; }
+    if sim_branch_landed "$br"; then state=landed; else state=missing; fi
+    sim_say "verify-landed $br $state"
+    [[ "$state" == "landed" ]] || { sim_say "REFUSE cleanup of $wt — $br not merged into $sim_base" ; return 1; }
+    sim_git worktree remove "$wt" || return 1
+    sim_git branch -d "$br"
+  }
+
+  # Scenario 1 — dirty → refuse. The worker "reported done" with a
+  # forgotten file and an uncommitted edit; its branch's real work IS
+  # committed and merged, so only the porcelain half can refuse this
+  # fixture — and the trace assertion proves that half actually looked
+  # (git's own dirty-guard on `worktree remove` must not get to cover for
+  # a deleted check).
+  sim_scenario_1_dirty_refuse() {
+    local wt="$DOCTOR_SIM_DIR/wt-dirty" br="task/sim-dirty" rc=0
+    if ! sim_git worktree add -b "$br" "$wt" >/dev/null; then
+      sim_fail "scenario 1 (dirty → refuse): fixture setup failed"; return 1
+    fi
+    printf 'worker change\n' > "$wt/worker.txt"
+    if ! sim_git_at "$wt" add worker.txt >/dev/null \
+       || ! sim_git_at "$wt" commit -q -m 'committed half of the work' >/dev/null \
+       || ! sim_git merge --no-edit "$br" >/dev/null; then
+      sim_fail "scenario 1 (dirty → refuse): fixture setup failed"; return 1
+    fi
+    printf 'forgotten scratch\n' > "$wt/scratch-notes.md"
+    printf 'uncommitted edit\n' >> "$wt/worker.txt"
+    sim_verify_and_cleanup "$wt" "$br" || rc=$?
+    if ! grep -qF -- "verify-porcelain $wt dirty" "$sim_trace"; then
+      sim_fail "scenario 1 (dirty → refuse): verify never observed the dirty worktree — step-4 check deleted or bypassed"; return 1
+    fi
+    if (( rc == 0 )); then
+      sim_fail "scenario 1 (dirty → refuse): gate CLEANED UP a dirty worktree instead of refusing — silent work loss"; return 1
+    fi
+    if [[ ! -d "$wt" ]] || ! sim_git rev-parse -q --verify "$br" >/dev/null; then
+      sim_fail "scenario 1 (dirty → refuse): refusal destroyed the worktree or branch — refusing must preserve what it refuses to clean"; return 1
+    fi
+    sim_pass "scenario 1 (dirty → refuse)"
+  }
+
+  # Scenario 2 — commit + merge → remove. The happy path end to end:
+  # worker commits explicit paths on its task branch, the sequential
+  # single-branch merge lands it in base, the gate passes, and cleanup is
+  # the sanctioned non-force pair. Post-conditions: gone from disk and
+  # refs, work reachable from base.
+  sim_scenario_2_commit_merge_remove() {
+    local wt="$DOCTOR_SIM_DIR/wt-clean" br="task/sim-clean" rc=0 sha
+    if ! sim_git worktree add -b "$br" "$wt" >/dev/null; then
+      sim_fail "scenario 2 (commit+merge → remove): fixture setup failed"; return 1
+    fi
+    printf 'feature work\n' > "$wt/feature.txt"
+    if ! sim_git_at "$wt" add feature.txt >/dev/null \
+       || ! sim_git_at "$wt" commit -q -m 'task work' >/dev/null; then
+      sim_fail "scenario 2 (commit+merge → remove): fixture setup failed"; return 1
+    fi
+    sha=$(sim_git rev-parse "$br")
+    if ! sim_git merge --no-edit "$br" >/dev/null; then
+      sim_fail "scenario 2 (commit+merge → remove): sequential merge into $sim_base failed"; return 1
+    fi
+    sim_verify_and_cleanup "$wt" "$br" || rc=$?
+    if ! grep -qF -- "verify-porcelain $wt clean" "$sim_trace" \
+       || ! grep -qF -- "verify-landed $br landed" "$sim_trace"; then
+      sim_fail "scenario 2 (commit+merge → remove): verify never recorded the clean+landed fixture — step-4 check deleted or bypassed"; return 1
+    fi
+    if (( rc != 0 )); then
+      sim_fail "scenario 2 (commit+merge → remove): gate refused a clean+merged worktree (rc=$rc) — a false refusal strands worktrees and branches"; return 1
+    fi
+    if [[ -d "$wt" ]] || sim_git rev-parse -q --verify "$br" >/dev/null; then
+      sim_fail "scenario 2 (commit+merge → remove): worktree dir or branch survived a passed gate"; return 1
+    fi
+    if ! sim_git merge-base --is-ancestor "$sha" "$sim_base"; then
+      sim_fail "scenario 2 (commit+merge → remove): merged work not reachable from $sim_base after cleanup"; return 1
+    fi
+    sim_pass "scenario 2 (commit+merge → remove)"
+  }
+
+  # Scenario 3 — the docs-only lead-commit shape (part A: the lead commits
+  # only docs/<slug>/ in its phase-complete commit). Empty listings (empty
+  # or merge commits) count as NOT docs-only — only a non-empty all-docs
+  # listing may pass. Positive AND negative controls asserted: the whole
+  # invariant hinges on the discrimination.
+  sim_commit_is_docs_only() {
+    local paths p
+    paths=$(sim_git show --name-only --format= "$1") || return 1
+    [[ -n "$paths" ]] || return 1
+    while IFS= read -r p; do
+      [[ "$p" == docs/* ]] || return 1
+    done <<<"$paths"
+    return 0
+  }
+  sim_scenario_3_docs_only_lead_commit() {
+    mkdir -p "$sim_repo/docs/sim"
+    printf 'phase-branch record\n' > "$sim_repo/docs/sim/phase-branches.md"
+    if ! sim_git add docs/sim/phase-branches.md >/dev/null \
+       || ! sim_git commit -q -m 'docs(sim): phase complete'; then
+      sim_fail "scenario 3 (docs-only lead commit): fixture commit failed"; return 1
+    fi
+    if ! sim_commit_is_docs_only HEAD; then
+      sim_fail "scenario 3 (docs-only lead commit): docs-only commit not recognized — discriminator broken"; return 1
+    fi
+    printf 'note\n' > "$sim_repo/docs/sim/note.md"
+    printf 'app()\n' > "$sim_repo/app.js"
+    if ! sim_git add docs/sim/note.md app.js >/dev/null \
+       || ! sim_git commit -q -m 'mixed: docs plus code'; then
+      sim_fail "scenario 3 (docs-only lead commit): negative-control commit failed"; return 1
+    fi
+    if sim_commit_is_docs_only HEAD; then
+      sim_fail "scenario 3 (docs-only lead commit): mixed docs+code commit accepted as docs-only — the invariant hinges on this discrimination"; return 1
+    fi
+    sim_pass "scenario 3 (docs-only lead commit)"
+  }
+
+  # Scenario 4 — committed-but-unmerged work must never be cleaned up:
+  # the merge-base half of the gate (the worktree is deliberately
+  # porcelain-clean so this fixture isolates that half; scenario 1 owns
+  # the dirty half). Under DOCTOR_SIM_SKIP_VERIFY the gate is gone and
+  # the blind cleanup force-removes this worktree and force-deletes the
+  # only ref to the work — the exact silent work-loss bug part B exists
+  # to prevent — so every assertion here goes red and the overall sim
+  # fails loudly instead of passing silently. That IS the acceptance
+  # fixture.
+  sim_scenario_4_unmerged_never_cleaned() {
+    local wt="$DOCTOR_SIM_DIR/wt-skip" br="task/sim-skip" rc=0 sha
+    if ! sim_git worktree add -b "$br" "$wt" >/dev/null; then
+      sim_fail "scenario 4 (unmerged → never cleaned): fixture setup failed"; return 1
+    fi
+    printf 'unmerged work\n' > "$wt/unmerged.md"
+    if ! sim_git_at "$wt" add unmerged.md >/dev/null \
+       || ! sim_git_at "$wt" commit -q -m 'work that never lands' >/dev/null; then
+      sim_fail "scenario 4 (unmerged → never cleaned): fixture setup failed"; return 1
+    fi
+    sha=$(sim_git rev-parse "$br")
+    if [[ -n "$(sim_git_at "$wt" status --porcelain)" ]]; then
+      sim_fail "scenario 4 (unmerged → never cleaned): fixture worktree unexpectedly dirty — it must isolate the merge-base check"; return 1
+    fi
+    sim_verify_and_cleanup "$wt" "$br" || rc=$?
+    if ! grep -qF -- "verify-landed $br missing" "$sim_trace"; then
+      sim_fail "scenario 4 (unmerged → never cleaned): verify never recorded $br as unlanded — step-4 check deleted or bypassed"; return 1
+    fi
+    if (( rc == 0 )); then
+      sim_fail "scenario 4 (unmerged → never cleaned): CLEANED UP committed-but-unmerged work — the silent work-loss bug part B exists to prevent"; return 1
+    fi
+    if [[ ! -d "$wt" ]] || [[ "$(sim_git rev-parse -q --verify "$br" 2>/dev/null)" != "$sha" ]]; then
+      sim_fail "scenario 4 (unmerged → never cleaned): worktree or its branch ref lost after refusal — unlanded work destroyed"; return 1
+    fi
+    sim_pass "scenario 4 (unmerged → never cleaned)"
+  }
+
+  # Throwaway fixture repo: deterministic default branch, seed commit.
+  # (NOT `if ! A || { B; }` — that list SUCCEEDS when A and B both pass:
+  # `!A` is false so the || evaluates B and the list gets B's 0 status,
+  # firing the failure branch on the happy path. Each negated term needs
+  # its own `!`.)
+  if ! sim_git_at "$DOCTOR_SIM_DIR" init -b "$sim_base" "$sim_repo" >/dev/null; then
+    sim_fail "fixture repo setup failed: git init"
+    return 1
+  fi
+  printf 'seed\n' > "$sim_repo/README.md"
+  if ! sim_git add README.md >/dev/null || ! sim_git commit -q -m 'seed' >/dev/null; then
+    sim_fail "fixture repo setup failed: seed commit"
+    return 1
+  fi
+
+  for scenario in \
+    sim_scenario_1_dirty_refuse \
+    sim_scenario_2_commit_merge_remove \
+    sim_scenario_3_docs_only_lead_commit \
+    sim_scenario_4_unmerged_never_cleaned; do
+    "$scenario" || failed+=("$scenario")
+  done
+  if (( ${#failed[@]} )); then
+    sim_say "simulation FAILED: ${failed[*]} — fixture tree: $sim_repo, decision trace: $sim_trace"
+    return 1
+  fi
+  sim_say "simulation: all 4 part-B flow scenarios passed"
 }
 SIM_STEPS=(sim_worktree_flow)
 
