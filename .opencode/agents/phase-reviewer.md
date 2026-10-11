@@ -123,4 +123,4 @@ Report in this order:
 
 5. **Suggested doc edits** — concrete, targeted changes to `architecture.md`, `spec.md`, or `implementation-plan.md`.
 
-Be concise and concrete. Make no edits yourself.
+Make no edits yourself.

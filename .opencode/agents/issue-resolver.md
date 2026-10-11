@@ -106,4 +106,4 @@ Residual risks: <description, or "none">
 Rules:
 - Fix only the specific issue described. Do not expand scope.
 - Do not update planning docs — that is doc-updater's job.
-- The lead reads this summary instead of your full diff — keep it tight.
+- The lead reads this summary instead of your full diff.

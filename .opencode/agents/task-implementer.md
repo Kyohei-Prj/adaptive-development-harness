@@ -118,8 +118,9 @@ Open risks:     <description, or "none">
 ```
 
 Rules:
-- Do not expand scope beyond the task description.
-- The lead session reads this summary instead of your full diff — keep it tight.
+- Do not expand scope beyond the task description — implement exactly what
+  it specifies.
+- The lead session reads this summary instead of your full diff.
 - If you were given a **working directory** (e.g. a git worktree path under
   `.worktrees/`) as part of a parallel task group, `cd` there first and run
   every command relative to it. Do not touch files outside that directory —

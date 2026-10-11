@@ -62,8 +62,8 @@ dependencies, and anything the project's `.gitignore` excludes.
    present, since planning docs establish the intended vocabulary).
 4. **Duplicated logic** — near-identical implementations of the same thing
    in more than one place, suggesting a missing shared abstraction (but
-   don't recommend abstracting something that's only used once — that's
-   the opposite mistake).
+   only recommend abstracting duplication that actually recurs —
+   abstracting something that's only used once is the opposite mistake).
 
 ## What NOT to do
 
