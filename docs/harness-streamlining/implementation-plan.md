@@ -126,26 +126,26 @@ tightened-but-behavior-identical instructions — prohibitions paired with
 positive targets, no filler, sandbox rule as a 2-line imperative, no dead
 pointers — with doctor.sh green as the regression net.
 **Tasks:**
-- [ ] Task 4.1: Prose pass over the 8 agent bodies: pair prohibitions with
+- [x] Task 4.1: Prose pass over the 8 agent bodies: pair prohibitions with
       positive targets ("never git add -A — commit explicit paths"); delete
       the 3 no-op phrases ("keep it tight" ×2, "Be concise" ×1); hard-
       boundary statements stay plain prohibitions; commands/*.md untouched.
       (acceptance: grep finds 0 no-op phrases; `git diff` touches only
       agents/*.md among prose files; reviewer confirms no rule lost) [type: smoke]
-- [ ] Task 4.2: Sandbox/external_directory: each body reduced to a 2-line
+- [x] Task 4.2: Sandbox/external_directory: each body reduced to a 2-line
       imperative; why-essay appended to README's existing sandbox section
       (moved, never duplicated). (acceptance: bodies contain no why-prose
       beyond 2 lines; essay in README only) [type: smoke]
-- [ ] Task 4.3: phase-reviewer enforcement subset: condensed inline coding-
+- [x] Task 4.3: phase-reviewer enforcement subset: condensed inline coding-
       standards checklist replacing any residual full-skill restatement;
       full skill stays the pull reference. (acceptance: subset present,
       placeholder still absent; no `<fill in` reintroduced) [type: smoke]
-- [ ] Task 4.4: Cross-reference sweep: grep all "denylist", "permission",
+- [x] Task 4.4: Cross-reference sweep: grep all "denylist", "permission",
       "see … .md" references; retarget anything pointing at
       post-hoist- or diet-emptied sections to the shipped config or the
       skill. (acceptance: every reference resolves to a section that exists
       post-slug) [type: smoke]
-- [ ] Task 4.5: Re-run `scripts/doctor.sh`. (acceptance: exit 0) [type: smoke]
+- [x] Task 4.5: Re-run `scripts/doctor.sh`. (acceptance: exit 0) [type: smoke]
 
 Blocking: after Phase 3 (regression net exists; hoist shape known).
 
