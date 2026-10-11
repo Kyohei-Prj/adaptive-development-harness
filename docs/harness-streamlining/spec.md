@@ -98,8 +98,10 @@ truth.
       the duplication itself is the intended fallback shape, not a defect.
 - [ ] AGENTS.md ≤ 80 lines; README contains the relocated essays; grep
       proves no essay duplicated across the two files.
-- [ ] 3 no-op phrases gone (grep); commands files byte-identical; 8 agent
-      bodies pass the prose-pass review in `/review-phase`.
+- [ ] 3 no-op phrases gone (grep); commands files byte-identical (except the
+      review-approved pointer retarget a4b98b9 in Phase 4's NB2 fix — three
+      commands files); 8 agent bodies pass the prose-pass review in
+      `/review-phase`.
 - [ ] Cross-reference sweep clean; phase-reviewer enforcement subset present
       and no `<fill in` reintroduced.
 - [ ] Dogfooding: `/review-phase` passes each phase; `/finalize` clean.

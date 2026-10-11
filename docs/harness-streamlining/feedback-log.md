@@ -366,3 +366,124 @@
 - No README or spec.md edits — reviewer confirmed README's sandbox
   paragraph is the single essay home (re-duplication would violate 4.2) and
   spec's Phase-4 claims are accurate as shipped.
+
+---
+
+## 2026-10-11 — Phase 5 review
+
+**Issues found:**
+- Review verdict: pass-with-nits — 0 blocking, 5 non-blocking. Diff baseline
+  `ba562f8` (recorded base `feature/harness-streamlining-phase-4`); two phase
+  commits: `904c176` (Task 5.1 sweep) + `c95b313` (phase-complete, docs-only).
+  Both tasks `[type: smoke]`.
+- Carried-risk checks all resolved green: (1) check 5's claim phrase "8 agent
+  files, 10 command files, 4 skills, 2 scripts" intact at README:114 and
+  matches disk (8/10/4/2); (2) AGENTS.md 32/≤80 lines, Phase 5 edit was a
+  one-line reword, zero net prose, check 7 green; (4) terminology seam —
+  canonical "hard-blocked commands" at every agent-facing naming/pointer site,
+  no hand-copy re-enumeration reintroduced (one removed from the
+  task-implementer table cell); (6) check 8 whitespace-coupling NOT made worse
+  — `git diff ba562f8..HEAD -- scripts/ .opencode/` empty. `./scripts/doctor.sh`
+  → 10 passed exit 0; phase-complete commit verified docs-only; no `.scratch/`
+  committed; all 13 AGENTS.md `README → *…*` citations resolve.
+- Task 5.2 compliance caveat (recorded, not blocking): commits cover Task 5.1's
+  audit but record no per-criterion pass over spec's 7 acceptance bullets; the
+  reviewer reconstructed the full end-to-end re-verification at review (gate
+  experiments ✓, doctor exit 0 + sim cleans scratch ✓, fixture reds ✓,
+  AGENTS/essays/dedup ✓, no-op phrases gone — grep empty ✓, cross-ref
+  sweep/subset ✓, dogfooding Phases 1–4 passed). "`/finalize` after this
+  phase" is the plan's post-phase step (finalize.md is in-chat output, no
+  committed report), so its absence now is expected — the `[x]` on 5.2
+  pre-commits only that finalize-report checklist.
+- NB1 (fixed this round by explicit decision): italic-pointer citation check in
+  doctor.sh — Phase 2/3/4 logs required Phase 5 to decide it explicitly; Phase 5
+  recorded the *verification* but not the *decision*. LEAD DECISION (this
+  round): DECLINE adding a new doctor.sh check to this slug. Rationale: the
+  check was never in any phase's task list (Phase 3 deliberately deferred it on
+  the same grounds); Phase 5 is the last docs-closing slice and a new check is
+  scope expansion at the slug tail; all ~12 pointers verified resolving today
+  (already-green state, no active defect). Recorded as a DEFERRED backlog item
+  below, not dropped.
+- NB2 (fixed this round by explicit disposition): effective-action smoke
+  candidate (C1/C2 pattern, 2 `opencode run` calls, gate-experiments.md) —
+  carried since Phase 1, routed to "Phase 5/finalize" by Phase 3/4 logs; Phase
+  5's diff had zero trace. LEAD DISPOSITION (this round): run it as part of the
+  upcoming `/finalize harness-streamlining` step (its designated natural home),
+  so it executes in the very next step rather than mid-review. Disposition now
+  recorded; see Deferred/Risks.
+- NB3 (fixed, a391f2b): three README naming sites + AGENTS.md:22 parenthetical
+  still used the retired "denylist" term for the hard-blocked set; retargeted
+  to canonical "hard-blocked commands" (heading + README:712 troubleshooting
+  heading + README:760 "hard-block" + AGENTS.md:22 pointer) in one commit so
+  the descriptive pointer never points at a retired name. Mechanism-generic
+  "denylist" uses (allow-by-default-with-denylist, doctor "Denylist drift",
+  "denylist patterns") correctly preserved. doctor exit 0, AGENTS.md 32 lines.
+- NB4 (fixed, e8639bb): README autorun.sh docs made accurate to shipped
+  `scripts/autorun.sh` — the stop-path sentence (README:749) was
+  over-generalized (claimed every stop prints `Stopped at: …` + re-invocation;
+  true only for trailer stops). Now distinguishes the three real stop paths:
+  trailer stop (FAIL/NEEDS_HUMAN → `Stopped at:` + re-invocation on final
+  line), missing-trailer stop (re-invocation but no `Stopped at:` line — exits
+  before that echo), and `opencode run` tooling failure (error line, neither
+  marker). Added optional `[start_phase]` resume arg to the three bare usage
+  sites (heading, code block, cross-ref). Ground-truth verified against script
+  line ranges; script itself untouched.
+- NB5 (a: fixed this round; b: deferred — see below). (a) spec.md:101 "commands
+  files byte-identical" now literally false post-a4b98b9; annotated in spec.md
+  (see Doc changes). (b) three hand-copied 6-command enumerations live outside
+  the agent frontmatters (AGENTS.md's Hard-blocked-commands bullet; README's
+  "Hard-blocked commands are intentionally hardcoded" paragraph; README's
+  troubleshooting "refuses a command" paragraph) — all PRE-EXISTING and
+  preserved, not reintroduced; the frontmatters are the drift-checked golden
+  source, so these human-facing doc lists can silently drift (Phase 2 NB7
+  class). Reviewer judged conversion to pointer-only wording "explicitly a
+  judgment call; AGENTS.md line headroom argues for leaving them." DEFERRED
+  (below), not fixed.
+
+**Deferred issues (confirmed but not fixed this round):**
+- NB5b: three hand-copied hard-blocked-command enumerations in human-facing
+  docs (AGENTS.md + two README paragraphs) are the only un-drift-checked copies
+  of the deny-set; a future frontmatter change is a guaranteed manual sync.
+  Deferred by explicit judgment (reviewer + AGENTS.md line headroom argue
+  leave-as-is; the AGENTS.md bullet already declares the frontmatter
+  "authoritative list"). Candidate for pointer-only wording in a future
+  docs-hardening pass.
+- NB1 backlog (carried as decision outcome): doctor.sh italic-pointer citation
+  check — every `README → *Italic Section*` citation in AGENTS.md verified
+  resolving today but unguarded against a README section rename; ~12 pointers,
+  one rename from silently breaking with no check noticing. Candidate task for
+  a future hardening slug.
+- NB2 disposition: effective-action smoke (C1/C2, 2 `opencode run` calls) — to
+  be executed at `/finalize harness-streamlining`, not yet run in this review
+  round.
+- Standing carried deferrals unchanged: doctor.sh self-test harness (Phase 3
+  NB3), check 3 coverage widening `git add .`/`--all`/`-a` (Phase 3 NB4),
+  check 8 minified-JSON false-red residual, push-hardening cluster item awaiting
+  user decision (README).
+
+**Risks for future phases:**
+- This is the slug's last phase; risks are post-finalize/merge concerns.
+- `/finalize` will hit two soft spots on spec's acceptance list: the "commands
+  byte-identical" line (now annotated, NB5a) and Task 5.2's "checklist complete
+  in the finalize report" acceptance, which only finalizes into existence
+  during the finalize run — sequence the report so it doesn't self-referentially
+  red.
+- `/finalize` should run the effective-action smoke (NB2 disposition, C1/C2,
+  2 `opencode run` calls) so the upstream-version risk (shape-based drift can't
+  catch an OpenCode semantic change; model rides on cross-layer flatten order
+  observed v1.18.34/35) gets its cheap re-check on the current version.
+- The italic-pointer check (NB1 backlog) and the effective-action smoke both
+  leave this slug unowned; if finalize doesn't run the smoke, the Phase 4
+  warning stands (~12 AGENTS.md pointers unprotected against README renames;
+  upstream drift unnoticed).
+- If NB5b survives, the three doc enumerations remain the only un-drift-checked
+  copies of the deny-set; any future frontmatter deny-set edit must manually
+  sync all three.
+
+**Doc changes applied:**
+- spec.md line 101: "commands files byte-identical" annotated "(except the
+  review-approved pointer retarget a4b98b9 in Phase 4's NB2 fix — three commands
+  files)" so finalize reads an accurate clause.
+- feedback-log.md: this entry.
+- (NB3 README.md/AGENTS.md and NB4 README.md fixes landed separately in a391f2b
+  and e8639bb by issue-resolver; not re-touched here.)
