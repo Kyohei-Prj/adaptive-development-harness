@@ -159,6 +159,15 @@ duplication reintroduced by Phases 1–4.
       copy-instructions + any count claims to shipped reality; AGENTS.md
       stays ≤80 (doctor re-run). (acceptance: no doc statement contradicts
       shipped files; doctor exit 0) [type: smoke]
+      Note (Phase 4 review): the terminology/enumeration alignment for the
+      destructive-command prose was completed during the Phase 4 review
+      round — agent bodies now reference their frontmatter `bash` block
+      instead of a hand-copied enumeration, and the three command-file
+      pointers use the canonical "hard-blocked commands" term. Task 5.1's
+      README/AGENTS re-touch must keep ONE term across README, AGENTS.md,
+      commands, and agent bodies and must not reintroduce a hand-copied
+      command list anywhere outside the frontmatters (the single source
+      check 1's golden enforces).
 - [ ] Task 5.2: Spec acceptance-criteria re-verification end to end;
       `/finalize harness-streamlining` after this phase. (acceptance:
       checklist complete in the finalize report) [type: smoke]

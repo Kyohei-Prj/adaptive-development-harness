@@ -289,3 +289,80 @@
   golden; `opencode debug config` deliberately unused (presence in
   resolved output proves nothing; see doctor.sh check 1 header).
 - feedback-log.md: this entry.
+
+---
+
+## 2026-10-11 — Phase 4 review
+
+**Issues found:**
+- Review verdict: PASS — 0 blocking, 3 non-blocking. All five tasks
+  `[type: smoke]`; every acceptance command independently re-verified green
+  by the reviewer at review (no-op-phrase greps, sandbox-essay single-home
+  greps, placeholder grep, full pointer-class resolution against HEAD,
+  `./scripts/doctor.sh` exit 0). Phase-complete commit verified docs-only;
+  no `.scratch/` content committed; `commands/*.md` untouched by 4.1 as
+  required.
+- No-rule-lost confirmation (4.1's reviewer-side acceptance): every
+  prohibition in the five touched bodies survives with equivalence;
+  deleted micro-text accounted for item-by-item — the 3 no-op phrases
+  (plan-mandated), the why-essays (moved to README, merged), phase-reviewer's
+  advisory tail (merge-suggestion phrasing, not a rule), and lead's
+  "(create it if it doesn't exist…)" parenthetical (stale-vs-shipped-reality
+  per `docs/harness-defects/feedback-log.md:516`; removal closes that prior
+  finding).
+- Carried Phase 3 risk honored: check 3 stays green for the right reason —
+  the prose pass added no forbidden staging strings to `.opencode/`;
+  staging-rule lines byte-identical to base.
+- NB1 (fixed, fe64ebb): agent-body destructive-command prose
+  (task-implementer.md, issue-resolver.md) enumerated five categories while
+  the frontmatters deny six (branch deletion omitted) — last instance of the
+  Phase 2 NB7 drift class; durable fix dropped the hand-copied enumeration
+  entirely, prose now references the frontmatter `bash` permission block as
+  single source of truth, canonical term "hard-blocked" introduced for
+  pointer grep-ability.
+- NB2 (fixed, a4b98b9): three command-file pointers ("see the denylist in
+  task-implementer.md" ×2, "see its denylist") targeted bodies that never
+  contained the word "denylist" — resolved only by content; retargeted to
+  the "hard-blocked commands" paragraph so they resolve by literal word.
+- Recorded (no action): NB3 — the four Phase 4 task commits carry
+  subject-line-only messages (no recorded acceptance evidence); same class
+  as Phase 2's smoke-evidence gap, tolerated under that precedent because
+  every acceptance command was re-verified green at review and doctor
+  permanently guards the structural claims; this entry is the durable
+  evidence record.
+- Reviewer-verified against carried context: italic *Section* pointers all
+  resolve today; check 8 whitespace-coupling residual NOT worse (Phase 4
+  touched neither opencode.json nor doctor.sh).
+
+**Deferred issues (confirmed but not fixed this round):**
+- None new — both actionable non-blocking issues fixed this round (fe64ebb,
+  a4b98b9); NB3 recorded per the Phase 2 precedent (informational, no
+  code-level fix possible — history rewrite out of scope).
+- Standing carried deferrals unchanged: doctor.sh self-test harness
+  (Phase 3 NB3), check 3 coverage widening (Phase 3 NB4), check 8
+  minified-JSON false-red residual, push-hardening cluster item awaiting
+  user decision (README).
+
+**Risks for future phases:**
+- Phase 5 is the last phase before /finalize. README re-touch must preserve
+  check 5's parseable claim phrase (failure message names the function);
+  AGENTS.md headroom 48 lines — add pointers, not prose; effective-action
+  smoke candidate task for upstream-version risk still open.
+- Italic-pointer citation check in doctor.sh: all name-cited pointers
+  verified resolving today, so the check can codify an already-green state
+  with zero churn — Phase 5 must decide it explicitly; deferring again past
+  /finalize leaves ~12 AGENTS.md pointers unprotected against README
+  renames.
+- Terminology seam (NB1/NB2 root cause — hand-copied enumerations/terms):
+  if Phase 5 rewords the README agents-table, propagate the single chosen
+  term to bodies and command pointers in the same sweep; Task 5.1 carries
+  the note (see doc changes).
+
+**Doc changes applied:**
+- implementation-plan.md Task 5.1: appended review-time Note recording the
+  completed terminology/enumeration alignment and the
+  one-term/no-re-enumeration constraint for the 5.1 sweep.
+- feedback-log.md: this entry.
+- No README or spec.md edits — reviewer confirmed README's sandbox
+  paragraph is the single essay home (re-duplication would violate 4.2) and
+  spec's Phase-4 claims are accurate as shipped.
