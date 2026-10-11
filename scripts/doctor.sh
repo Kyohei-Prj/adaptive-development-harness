@@ -296,11 +296,13 @@ GOLDEN
     bad=1
   fi
   # Complementary architecture invariant: the failed hoist must NOT be
-  # re-applied — the shipped config carries no top-level `permission` key
-  # (an agent's `"*": allow` catch-all out-votes config-layer denies at
-  # runtime while they still appear resolved; gate-experiments.md).
-  if grep -qE '^  "permission"' "$REPO_ROOT/.opencode/opencode.json" 2>/dev/null; then
-    echo 'top-level "permission" key present in .opencode/opencode.json — the FR8-failed denylist hoist must NOT be re-applied (gate-experiments.md Decision)'
+  # re-applied — no `permission` key at ANY depth or formatting of the
+  # shipped config: per-agent maps live in the agent .md frontmatter (the
+  # golden above), so one in the config-layer file is the hoist shape or a
+  # variant (an agent's `"*": allow` catch-all out-votes config-layer
+  # denies at runtime while they still appear resolved; gate-experiments.md).
+  if grep -qE '"permission"[[:space:]]*:' "$REPO_ROOT/.opencode/opencode.json" 2>/dev/null; then
+    echo '"permission" key present in .opencode/opencode.json — the FR8-failed denylist hoist must NOT be re-applied (gate-experiments.md Decision)'
     bad=1
   fi
   return "$bad"
