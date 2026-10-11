@@ -135,9 +135,10 @@ pointers — with doctor.sh green as the regression net.
       full skill stays the pull reference. (acceptance: subset present,
       placeholder still absent; no `<fill in` reintroduced) [type: smoke]
 - [ ] Task 4.4: Cross-reference sweep: grep all "denylist", "permission",
-      "see … .md" references; retarget anything pointing at post-hoist-
-      emptied sections to the shipped config or the skill. (acceptance:
-      every reference resolves to a section that exists post-slug) [type: smoke]
+      "see … .md" references; retarget anything pointing at
+      post-hoist- or diet-emptied sections to the shipped config or the
+      skill. (acceptance: every reference resolves to a section that exists
+      post-slug) [type: smoke]
 - [ ] Task 4.5: Re-run `scripts/doctor.sh`. (acceptance: exit 0) [type: smoke]
 
 Blocking: after Phase 3 (regression net exists; hoist shape known).

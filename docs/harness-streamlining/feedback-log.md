@@ -126,3 +126,91 @@
   the intended fallback shape, not a defect.
 - implementation-plan.md: none — Task 1.3 text deliberately untouched, see
   Deferred NB5.
+
+---
+
+## 2026-10-11 — Phase 2 review
+
+**Issues found:**
+- Review verdict: pass-with-nits — 0 blocking, 5 actionable non-blocking (all
+  fixed this round), 2 informational records. All three tasks `[type: smoke]`;
+  acceptances verified empirically by the reviewer: `wc -l AGENTS.md` = 32 ≤ 80
+  with no surviving paragraph-level explanation and all previously-covered
+  operations still pointer-discoverable; per-phrase dedup greps confirmed each
+  relocated essay lives in exactly one file; all 12 README citation targets in
+  AGENTS.md exist; no `.scratch/` content committed; phase-complete commit
+  docs-only.
+- Smoke-evidence gap (non-blocking): the three Phase 2 task commits carry no
+  recorded acceptance evidence in their messages (Phase 1's round had that
+  record); acceptable because every check was independently re-verified green
+  at review and Phase 3's doctor check 7 makes the ≤80-line claim a permanent
+  guarantee.
+- NB1 (fixed, 072b3e8): `.opencode/commands/autorun.md` still pointed at
+  AGENTS.md's "Smart zone / dumb zone" section — emptied by the Phase 2 diet;
+  retargeted to README → *Tips & Conventions, "Smart zone / dumb zone"*.
+- NB2 (fixed, d2fe236): AGENTS.md denylist bullet misattributed the dual
+  prefix/anymatch-pattern explanation to *Tips & Conventions*; it lives in
+  *Troubleshooting*. Re-credited; the *Tips & Conventions* parenthetical made
+  precise ("why the denylist is hardcoded, why copies aren't DRYed"). Residual
+  nuance from the fixer: README's *Troubleshooting* entry deliberately does not
+  credit itself as the refuse-list source (the refuse-list enumeration lives in
+  Tips) — see NB7, since that enumeration was the five-command version.
+- NB3 (fixed, f2dd0f2): AGENTS.md "Commit explicit paths" bullet cited the
+  user-facing *Tips & Conventions, "Commit once manually"* item; the
+  agents-commit-explicit-paths rule lives in README *Stage 2*. Citation
+  retargeted.
+- NB6 (fixed, a7dd36e): the old archive why-essay's aside — closed
+  GitHub/issue-tracker items with clear "done" status are a safer long-term
+  reference than a live-looking markdown file — was the one micro-detail lost
+  in the Phase 2 relocation; restored into README's `/archive` paragraph
+  (Maintenance Commands), exactly once, core drift→mislead sentence untouched.
+- NB7 (fixed, 1a518a2; pre-existing, not Phase 2-introduced): README's two
+  hard-refused-command enumerations (Tips hardcoded-denylist paragraph;
+  *Troubleshooting*'s "This is intended" paragraph) listed five commands,
+  omitting `git branch -D`, while the six-command list in AGENTS.md and all
+  five agent frontmatters is authoritative; both enumerations now list six.
+- Recorded (no action): the denylist-rationale relocation MERGED with README's
+  existing paragraphs (allow-by-default sentences folded into the config-reading
+  paragraph; force-push-family exception folded into the dual-pattern
+  paragraph) and the Tips duplication-decision paragraph remains the sole
+  statement of the hoist mechanism — Phase 1's merge risk honored; no third
+  restatement; evidence stays in gate-experiments.md.
+- Recorded as intentional decision (no action): the full Behavioral Guidelines
+  prose (the "200 lines → 50, rewrite it" test, the verify-checklist template,
+  the "these guidelines are working if" check, the caution-vs-speed trade-off
+  note) was compressed to five one-liners and NOT relocated to README. Matches
+  Task 2.2's plan wording ("one-line working rules, pointers only") and spec
+  FR5's four-essay relocation scope — by plan, not a rule loss; recorded so a
+  future reader doesn't re-flag it.
+
+**Deferred issues (confirmed but not fixed this round):**
+- None — 0 blocking; all five non-blocking issues fixed in this round
+  (072b3e8, d2fe236, f2dd0f2, a7dd36e, 1a518a2).
+
+**Risks for future phases:**
+- Phase 4.4 scope-wording gap: its text named only "post-hoist-emptied
+  sections"; the diet also emptied sections (the autorun.md case, now fixed
+  directly). Amended (see doc changes) — but if 4.4 is ever re-narrowed,
+  diet-emptied pointers are the class at risk.
+- Pointer-format fragility: AGENTS.md cites README targets by italic *name*,
+  not anchors; a README section rename in Phase 5 would silently break ~12
+  pointers. Doctor (Phase 3) has no check for name-cited pointers; a cheap
+  "each *Italic Section* citation in AGENTS.md matches a README heading/bold
+  item" check fits check 7's task.
+- Phase 5 headroom, not drift: AGENTS.md at 32 lines leaves 48 lines before
+  doctor check 7 trips; the ≤80 guard catches gross re-inflation, not a 79-line
+  slow creep — Phase 5 should add pointers, not prose.
+- Infra observation from this round (not a risk to this codebase): the anymatch
+  deny form denies any bash command whose *text* contains the denied string —
+  including a legitimate commit message mentioning `git branch -D`. The NB7
+  fixer routed around it with `git commit -F <msgfile>` (msg in gitignored
+  `.scratch/`, deleted after; no denied command executed, message verbatim).
+  Worth weighing when Phase 3's doctor or future agent guidance touches
+  commit-message generation — the README's dual-pattern paragraph already
+  documents the underlying matching behavior.
+
+**Doc changes applied:**
+- implementation-plan.md Task 4.4: "post-hoist-emptied sections" →
+  "post-hoist- or diet-emptied sections" (closes the Phase 4.4 scope gap above;
+  the one known open case had already been fixed in 072b3e8).
+- feedback-log.md: this entry.
