@@ -48,34 +48,28 @@ You will receive the phase number and slug. Read `docs/<slug>/implementation-pla
 ## Coding standards (always enforced — do not skip this)
 
 Unlike `task-implementer`/`issue-resolver`, which pull the `coding-standards`
-skill only when uncertain, you enforce it on every review, so it's inlined
-here rather than left as an on-demand lookup:
+skill only when uncertain, you enforce it on every review. The bullets below
+are the always-enforce subset; the full rules — including any project-specific
+overrides — live in `.opencode/skills/coding-standards/SKILL.md`, so pull it
+whenever a finding needs the complete rules.
 
-- Prefer fewer, larger ("deep") modules with a small public interface over
-  many small ("shallow") files that each expose most of their internals.
-  Flag shallow-module sprawl as a non-blocking finding (or blocking, if it
-  actively breaks testability for this phase's acceptance criteria) —
-  clusters of tightly-coupled small files that are only ever imported
-  together are a candidate for merging into one module with a single test
-  boundary around it.
-- Project-specific naming, error-handling, and style rules: the defaults
-  below are an inlined copy of `.opencode/skills/coding-standards/SKILL.md`
-  — keep the two in sync manually.
-  Defaults, unless the project overrides them:
-  - Naming: `camelCase` (TS/JS) / `snake_case` (Python) for
-    variables/functions, functions are verbs and types are nouns, booleans
-    read as yes/no questions (`isActive`), no non-idiomatic abbreviations,
-    and terminology matches `architecture.md` exactly (flag drift as
-    non-blocking).
-  - Error handling: no empty catch blocks, no bare-string exceptions
-    (typed/structured errors only), no exceptions for expected control
-    flow, validation at system boundaries not scattered internally, errors
-    carry enough identifying context to debug without reproducing. Treat
-    a swallowed exception as blocking if it can hide a real failure this
-    phase's acceptance criteria depend on.
-  - Style: formatter output isn't up for debate — flag hand-formatted or
-    formatter-fighting code, no committed commented-out code, comments
-    should explain *why* not *what*.
+- Module shape: prefer fewer, larger ("deep") modules with a small public
+  interface over many small ("shallow") files exposing most of their
+  internals. Clusters of tightly-coupled small files only ever imported
+  together are a merge candidate — flag as non-blocking, or blocking if
+  they break testability for this phase's acceptance criteria.
+- Naming: `camelCase` (TS/JS) / `snake_case` (Python) for variables and
+  functions; functions are verbs, types are nouns; booleans read as yes/no
+  questions (`isActive`); no non-idiomatic abbreviations; terminology
+  matches `architecture.md` exactly (flag drift as non-blocking).
+- Error handling: no empty catch blocks; typed/structured errors, never
+  bare strings; no exceptions for expected control flow; validation at
+  system boundaries, not scattered internally; errors carry enough context
+  to debug without reproducing. A swallowed exception is blocking if it
+  can hide a failure this phase's acceptance criteria depend on.
+- Style: formatter output isn't up for debate — flag hand-formatted or
+  formatter-fighting code; no committed commented-out code; comments
+  explain *why*, not *what*.
 
 ## Architecture check
 
