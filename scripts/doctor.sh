@@ -458,6 +458,33 @@ check_watcher_ignore_entries() {
   return "$bad"
 }
 
+# CHECK 9 — invariant-marker presence (positive-presence; architecture.md
+# "Decision: `<!-- invariant: … -->` markers"): the absence-checks above
+# can't notice a prose condensation pass accidentally DELETING a required
+# step, so the two load-bearing worktree steps carry HTML-comment markers
+# that must exist. The ids below are the golden; renaming one is a
+# deliberate two-sided change (marker + this list, with a reason).
+check_invariant_markers() {
+  local skill="$REPO_ROOT/.opencode/skills/phase-lifecycle/SKILL.md" bad=0 id where
+  if [[ ! -f "$skill" ]]; then
+    echo ".opencode/skills/phase-lifecycle/SKILL.md is missing — its invariant markers can't be checked"
+    return 1
+  fi
+  for id in worktree-commit-before-report worktree-clean-and-landed-verification; do
+    grep -qF -- "<!-- invariant: $id -->" "$skill" || {
+      case "$id" in
+        worktree-commit-before-report)
+          where="part B step 2, on the commit-before-report requirement inside the delegation instructions" ;;
+        worktree-clean-and-landed-verification)
+          where="part B step 4, on the verify-before-cleanup gate (porcelain-clean AND merge-base --is-ancestor, with the never-force-remove rule)" ;;
+      esac
+      echo "invariant marker '<!-- invariant: $id -->' missing from .opencode/skills/phase-lifecycle/SKILL.md — it belongs on $where; if that step was deliberately removed, drop this id from check_invariant_markers in the same commit and say why"
+      bad=1
+    }
+  done
+  return "$bad"
+}
+
 register_check check_role_table_permissions
 register_check check_no_fill_in_placeholders
 register_check check_no_git_add_all
@@ -466,6 +493,7 @@ register_check check_readme_file_counts
 register_check check_grill_task_whitelist
 register_check check_agents_md_line_limit
 register_check check_watcher_ignore_entries
+register_check check_invariant_markers
 
 # ---------------------------------------------------------------------------
 # Simulation stage (Task 3.4 fills this in — spec FR4)

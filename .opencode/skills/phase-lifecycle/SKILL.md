@@ -52,7 +52,7 @@ For each parallel group (2+ tasks tagged parallel with each other):
    `git commit` your work on this task branch — **never stage the whole
    tree**: no `git add .`, no `git add --all`, no `git commit -a`; stage
    only the paths you changed. Work you left
-   uncommitted is not merged — it is destroyed at cleanup."
+   uncommitted is not merged — it is destroyed at cleanup." <!-- invariant: worktree-commit-before-report -->
 3. Once **all** tasks in the group report done, merge each task branch
    back into the phase branch **sequentially, one at a time — never in
    parallel**: `git merge task/<slug>-<task-id>`.
@@ -69,7 +69,7 @@ For each parallel group (2+ tasks tagged parallel with each other):
    **If either check fails: stop and report — never
    `git worktree remove --force`** and never `git branch -D` to paper over
    a failure; they silently destroy exactly the work the failed check is
-   flagging. Only once both pass, clean up:
+   flagging. Only once both pass, clean up: <!-- invariant: worktree-clean-and-landed-verification -->
    `git worktree remove .worktrees/<slug>-<task-id>` and
    `git branch -d task/<slug>-<task-id>`.
 
