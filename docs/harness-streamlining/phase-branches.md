@@ -9,3 +9,4 @@ reads this for its diff baseline — never inferred from naming patterns.
 | 2 | feature/harness-streamlining-phase-2 | feature/harness-streamlining-phase-1 |
 | 3 | feature/harness-streamlining-phase-3 | feature/harness-streamlining-phase-2 |
 | 4 | feature/harness-streamlining-phase-4 | feature/harness-streamlining-phase-3 |
+| 5 | feature/harness-streamlining-phase-5 | feature/harness-streamlining-phase-4 |

@@ -155,7 +155,7 @@ describe the streamlined harness as shipped — agents table shows post-hoist
 permission shape, file lists match reality (2 scripts), no stale
 duplication reintroduced by Phases 1–4.
 **Tasks:**
-- [ ] Task 5.1: Docs follow-through sweep: update README agents-table +
+- [x] Task 5.1: Docs follow-through sweep: update README agents-table +
       copy-instructions + any count claims to shipped reality; AGENTS.md
       stays ≤80 (doctor re-run). (acceptance: no doc statement contradicts
       shipped files; doctor exit 0) [type: smoke]
@@ -168,7 +168,7 @@ duplication reintroduced by Phases 1–4.
       commands, and agent bodies and must not reintroduce a hand-copied
       command list anywhere outside the frontmatters (the single source
       check 1's golden enforces).
-- [ ] Task 5.2: Spec acceptance-criteria re-verification end to end;
+- [x] Task 5.2: Spec acceptance-criteria re-verification end to end;
       `/finalize harness-streamlining` after this phase. (acceptance:
       checklist complete in the finalize report) [type: smoke]
 
