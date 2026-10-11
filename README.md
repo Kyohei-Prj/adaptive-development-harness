@@ -297,12 +297,12 @@ When all phases are complete, `lead` reports a full run summary and reminds you 
 
 **The trade-off:** because everything happens in one `lead` session, that session's own context accumulates a summary per phase for the life of the run. Fine for a short plan; on a long one (8+ phases), the orchestrating session itself can drift toward the smart zone ceiling even though it never holds full diffs — see [Smart zone / dumb zone](#tips--conventions) below.
 
-#### Option B (experimental) — `scripts/autorun.sh <slug>` (headless, genuinely fresh session per phase)
+#### Option B (experimental) — `scripts/autorun.sh <slug> [start_phase]` (headless, genuinely fresh session per phase)
 
 For long plans, or for true unattended automation (CI, a cron job, "kick it off before you leave for the day") — with no checkpoint pauses at all, not even Option A's between-phase one — use the driver script instead:
 
 ```bash
-scripts/autorun.sh <slug>
+scripts/autorun.sh <slug> [start_phase]   # [start_phase] is an optional resume point — see Troubleshooting
 ```
 
 This isn't an in-chat command — it's a bash script that calls the `opencode` CLI's non-interactive mode (`opencode run --agent lead`) once per phase-step. Each call is its own **process**, with its own fresh context — the same property you'd get from manually closing a session and starting another, except nothing here has to remember to do it. Concretely, for each phase N it runs (the commands go through `--command`, not as `/slash` strings — `opencode run` doesn't resolve slash syntax):
@@ -410,7 +410,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 | `/archive <slug>` | `lead` | Slug | Move a merged slug's docs to `docs/_archive/`, after merging to main |
 | `/architecture-review [path]` | `lead` | Optional path | Whole-codebase (or scoped) architecture scan, run periodically, not tied to a slug |
 
-`scripts/autorun.sh <slug>` (a bash script, not an in-chat command) drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` processes — one process per phase, so each phase's orchestrating session is genuinely fresh rather than accumulated across the whole run. See [Automated Full Run](#automated-full-run-optional).
+`scripts/autorun.sh <slug> [start_phase]` (a bash script, not an in-chat command; `[start_phase]` is an optional resume point — see [Troubleshooting](#troubleshooting)) drives `/implement-phase-auto`, `/review-phase-auto`, and `/finalize` via separate `opencode run` processes — one process per phase, so each phase's orchestrating session is genuinely fresh rather than accumulated across the whole run. See [Automated Full Run](#automated-full-run-optional).
 
 ---
 
@@ -746,7 +746,7 @@ The script treats a missing trailer as `NEEDS_HUMAN` rather than assuming succes
 This was a real bug in an earlier version of the script: it grepped the *raw* `opencode run --format json` output directly for the string `AUTORUN_STATUS:`, which can also appear inside a `tool_use` event's payload — most commonly when `lead` reads the `phase-lifecycle` skill itself, since that skill's own documentation includes a literal example of the trailer format. A naive grep can't distinguish "the skill describing the format" from "the agent's actual report," and since JSON encodes embedded newlines as literal `\n` characters rather than real line breaks, the match can run on for many lines past where it looks like it should stop — which is exactly where line-numbered garbage like `104: AUTORUN_STATUS: FAIL...` comes from (that's the skill file's own content, not a real error). The fix is to actually parse the JSONL with `jq` and pull out only `type=="text"` events (the model's real output) before searching for the trailer — which is what the script does now. If you're seeing this, confirm `jq` is installed and check `docs/<slug>/autorun.log` for a "Warning: could not extract a final text response via jq" line — that means it silently fell back to the old, unreliable raw-grep path, and the result should be treated with suspicion.
 
 **`scripts/autorun.sh` stopped partway through and I want to resume**  
-The stop is logged as `Stopped at: Phase N: <step>`, and the script's final log line prints the exact re-invocation to use. Fix whatever stopped it, then run `scripts/autorun.sh <slug> <next-phase-number>` — that second argument skips every phase before it, so committed phases aren't redone. The script never creates or switches branches, and phases stack (each branches off the previous phase's branch), so before resuming, check out the branch the next phase should build on. Or resume interactively from that point with `/implement-phase`/`/review-phase`.
+A trailer stop (`AUTORUN_STATUS: FAIL` / `NEEDS_HUMAN`) is logged as `Stopped at: Phase N: <step>` with the exact re-invocation on the final line; a missing trailer (treated as `NEEDS_HUMAN` — see that entry above) prints the re-invocation but no `Stopped at:` line; an `opencode run` tooling failure (see that entry above) prints neither — the error line itself is what to read. Fix whatever stopped it, then run `scripts/autorun.sh <slug> <next-phase-number>` — that second argument skips every phase before it, so committed phases aren't redone. The script never creates or switches branches, and phases stack (each branches off the previous phase's branch), so before resuming, check out the branch the next phase should build on. Or resume interactively from that point with `/implement-phase`/`/review-phase`.
 
 **`opencode run` reports "Session not found" or similar, even for a trivial prompt**  
 Some `opencode` versions/platforms have had `run` require a pre-existing session rather than creating one automatically (there's a link to the relevant tracking issue in `scripts/autorun.sh`'s header comment). Check `opencode run --help` and `opencode session --help` for your installed version; if this affects you, the script needs a small change to create a session explicitly per phase before running the command against it.
