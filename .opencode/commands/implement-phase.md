@@ -22,7 +22,7 @@ Steps:
 
 - **Any `task-implementer` reports FAIL.** Do not retry, do not reinterpret the task, do not skip it and continue to the next task.
 - **A worktree merge conflict occurs** during parallel-task merge-back (`phase-lifecycle` part B, step 3). Never attempt automatic conflict resolution.
-- **Any destructive-command refusal surfaces from a subagent** (see the denylist in `task-implementer.md`) that blocks completing a task as described.
+- **Any destructive-command refusal surfaces from a subagent** (see the hard-blocked commands paragraph in `task-implementer.md`) that blocks completing a task as described.
 
 On any stop condition: do NOT commit. Stop delegating, surface the root cause to me in full — what was attempted, what succeeded before the stop, and exactly what stopped it — and ask me for direction instead of halting or working around it.
 

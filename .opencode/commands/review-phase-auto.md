@@ -18,7 +18,7 @@ Steps:
 
 - **Any `issue-resolver` reports FAIL.** Do not retry indefinitely, do not reinterpret the issue.
   - Exception: if the failure is isolated to one non-blocking issue and every blocking issue was resolved successfully, you may treat that single issue as a **deferred issue** (logged via `doc-updater` in step 3) and continue — a stalled non-blocking cosmetic fix shouldn't halt an otherwise-successful automated run. Any FAIL on a **blocking** issue always stops the whole run; never defer a blocking issue automatically.
-- **Any destructive-command refusal surfaces** from `issue-resolver` (see its denylist) that blocks resolving a blocking issue as described.
+- **Any destructive-command refusal surfaces** from `issue-resolver` (see its hard-blocked commands paragraph) that blocks resolving a blocking issue as described.
 
 On a stop condition that isn't the single-non-blocking-issue exception above: do NOT commit. Produce the final report with status `FAIL` (genuine failure) or `NEEDS_HUMAN` (a judgment call, e.g. an ambiguous issue description that needs human interpretation), with enough detail that a human reading only this output can act on it later without having watched the run.
 
