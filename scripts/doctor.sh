@@ -419,6 +419,10 @@ check_grill_task_whitelist() {
     }
     t && !/^[ \t]*$/ { exit }
   ' "$grill")
+  # Zero parsed names is NOT a pass: a renamed/reindented `task:` key or
+  # removed entries would leave the loop below unrun and the whitelist
+  # invariant silently unverifiable — go red on the shape change itself.
+  [[ -n "$names" ]] || { echo "grill task block parsed empty — frontmatter shape changed?"; return 1; }
   # Any non-deny action counts as whitelisted: an `ask` on a third
   # subagent would still let the call through the door the deny closed.
   for name in $names; do
