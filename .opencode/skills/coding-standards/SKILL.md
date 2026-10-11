@@ -8,8 +8,8 @@ description: Project coding standards (naming, module shape, error handling, sty
 > The same content (or a trimmed version) is duplicated, deliberately, as a
 > **push** resource inline in `phase-reviewer.md`, so the reviewer always
 > enforces it without needing to remember to go look it up. If you edit
-> this file, update phase-reviewer.md's inline copy too — see the note
-> there.
+> this file, update phase-reviewer.md's always-enforce subset (its
+> "Coding standards" section) too.
 
 ## Module shape
 
