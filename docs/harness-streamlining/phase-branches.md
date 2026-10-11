@@ -6,3 +6,4 @@ reads this for its diff baseline — never inferred from naming patterns.
 | Phase | Branch | Base |
 |---|---|---|
 | 1 | feature/harness-streamlining-phase-1 | harness-streamlining |
+| 2 | feature/harness-streamlining-phase-2 | feature/harness-streamlining-phase-1 |

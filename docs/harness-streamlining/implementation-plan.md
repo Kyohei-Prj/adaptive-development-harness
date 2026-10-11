@@ -55,17 +55,17 @@ with every relocated essay living exactly once in README.* Reviewable by
 opening both files side by side. (Not yet statically checked — Phase 3's
 doctor turns this into a permanent guarantee.)
 **Tasks:**
-- [ ] Task 2.1: Relocate smart-zone, denylist-rationale (dual prefix+
+- [x] Task 2.1: Relocate smart-zone, denylist-rationale (dual prefix+
       anymatch explanation, allow-by-default rationale), autorun.sh
       dumb-zone, and parallel-isolation essays from AGENTS.md into README's
       existing sections, deduplicating against what README already says.
       (acceptance: each essay appears in exactly one file — grep a
       distinctive phrase from each in both files hits exactly one) [type: smoke]
-- [ ] Task 2.2: Rewrite AGENTS.md to ≤80 lines (target ~60): stage list,
+- [x] Task 2.2: Rewrite AGENTS.md to ≤80 lines (target ~60): stage list,
       one-line working rules, pointers only. (acceptance: `wc -l` ≤ 80; no
       paragraph-level explanation survives; all previously-covered
       operations still discoverable via pointer) [type: smoke]
-- [ ] Task 2.3: Sandbox/external_directory split prep: leave AGENTS.md's
+- [x] Task 2.3: Sandbox/external_directory split prep: leave AGENTS.md's
       sandbox section as a one-line pointer (full treatment of agent-body
       2-line imperatives is Phase 4). (acceptance: no why-essay remains in
       AGENTS.md) [type: smoke]
