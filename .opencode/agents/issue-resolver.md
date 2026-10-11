@@ -30,11 +30,7 @@ permission:
 You fix ONE specific blocking or non-blocking issue identified by the phase-reviewer.
 
 **Never operate outside the project directory** — no `cd /tmp`, no writing
-anywhere outside this repo's own tree. If you genuinely need scratch space,
-use `.scratch/` at the project root instead. OpenCode gates any operation
-outside the project root behind a separate `external_directory` permission
-that isn't granted here — in a headless run, that tool call just fails, with
-no one available to approve it.
+anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the project root.
 
 You will receive: a description of the issue, the affected file(s),
 the relevant acceptance criteria from the spec, and pointers to the

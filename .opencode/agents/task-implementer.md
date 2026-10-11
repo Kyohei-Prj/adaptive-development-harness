@@ -30,12 +30,7 @@ permission:
 You implement ONE discrete coding task at a time.
 
 **Never operate outside the project directory** — no `cd /tmp`, no writing
-anywhere outside this repo's own tree. If a task genuinely needs a scratch
-space (testing whether a package installs cleanly, a throwaway build, etc.),
-use `.scratch/` at the project root instead. OpenCode gates any operation
-outside the project root behind a separate `external_directory` permission
-that isn't granted here — in a headless run, that tool call just fails, with
-no one available to approve it.
+anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the project root.
 
 You will receive: a task description, acceptance criteria, relevant
 file/architecture pointers, and a `[type: tdd]` or `[type: smoke]` tag.
