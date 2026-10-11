@@ -305,14 +305,14 @@ For long plans, or for true unattended automation (CI, a cron job, "kick it off 
 scripts/autorun.sh <slug>
 ```
 
-This isn't an in-chat command — it's a bash script that calls the `opencode` CLI's non-interactive mode (`opencode run --agent lead "<command>"`) once per phase-step. Each call is its own **process**, with its own fresh context — the same property you'd get from manually closing a session and starting another, except nothing here has to remember to do it. Concretely, for each phase N it runs:
+This isn't an in-chat command — it's a bash script that calls the `opencode` CLI's non-interactive mode (`opencode run --agent lead`) once per phase-step. Each call is its own **process**, with its own fresh context — the same property you'd get from manually closing a session and starting another, except nothing here has to remember to do it. Concretely, for each phase N it runs (the commands go through `--command`, not as `/slash` strings — `opencode run` doesn't resolve slash syntax):
 
 ```bash
-opencode run --agent lead "/implement-phase-auto N <slug>"
-opencode run --agent lead "/review-phase-auto N <slug>"
+opencode run --agent lead --format json --command implement-phase-auto "N <slug>"
+opencode run --agent lead --format json --command review-phase-auto "N <slug>"
 ```
 
-and after every phase, calls `/finalize <slug>` once at the end. `implement-phase-auto` and `review-phase-auto` are non-interactive twins of `implement-phase`/`review-phase` — same steps, same worktree/denylist/deferred-issue behavior, but never pausing for confirmation, and always ending their response with a machine-readable trailer the script parses:
+and once the phase loop finishes, calls `/finalize <slug>` once. `implement-phase-auto` and `review-phase-auto` are non-interactive twins of `implement-phase`/`review-phase` — same steps, same worktree/denylist/deferred-issue behavior, but never pausing for confirmation, and always ending their response with a machine-readable trailer the script parses:
 
 ```
 AUTORUN_STATUS: OK
@@ -320,7 +320,7 @@ AUTORUN_STATUS: FAIL: <reason>
 AUTORUN_STATUS: NEEDS_HUMAN: <reason>
 ```
 
-The script stops immediately (non-zero exit) on anything other than `OK` — including a missing trailer, which it treats as `NEEDS_HUMAN` rather than assuming success. Everything is logged to `docs/<slug>/autorun.log`, since there's no live chat to watch. On a stop, review the log, fix whatever's wrong (manually, or by resuming interactively with `/implement-phase`/`/review-phase` for that specific phase), then re-run — completed phases won't be redone since their branches and `phase-branches.md` rows already exist, though the current script doesn't auto-skip them, so either edit the phase list at the top of a re-run or invoke the remaining phases' commands by hand.
+The script stops immediately (non-zero exit) on anything other than `OK` — including a missing trailer, which it treats as `NEEDS_HUMAN` rather than assuming success. Everything is logged to `docs/<slug>/autorun.log`, since there's no live chat to watch. On a stop, review the log, fix whatever's wrong (manually, or by resuming interactively with `/implement-phase`/`/review-phase` for that specific phase), then re-run with the next phase's number as a second argument — `scripts/autorun.sh <slug> <start_phase>` skips every phase before it, so already-committed phases aren't redone.
 
 **Requirements:** the `opencode` CLI on `PATH`, with headless auth already configured (`opencode auth login` or the relevant provider environment variables), and `jq` on `PATH` (the script checks for this and fails fast with a clear message if missing). Smoke-test with `opencode run --agent lead "echo hi"` before a real run — some `opencode` versions/platforms have had `run` require a pre-existing session rather than creating one automatically; the script's header comment has a link to the relevant issue if you hit this.
 
@@ -382,12 +382,12 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 |---|---|---|---|
 | `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask · task: explore/scout only |
 | `planner` | primary | Transcribes an aligned design concept into docs, structured as vertical slices | edit: allow · bash: deny · webfetch: allow |
-| `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (bookkeeping only — `phase-branches.md` rows + `implementation-plan.md` checkbox flips, by convention) · bash: allow with destructive-command + push + scope denylist · webfetch: allow · task: whitelisted 5 subagents only |
-| `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure; may be pointed at a git worktree for parallel work | edit/bash/webfetch: allow, with force-push/`rm -rf`/`reset --hard`/etc. hard-denied · task: deny |
-| `phase-reviewer` | subagent | Read-only review, diffs against the base recorded in `phase-branches.md`, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model; also runs in finalize mode for `/finalize` | edit: deny · bash: allow with destructive-command + commit/add/push denylist |
-| `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks; same destructive-command denylist as `task-implementer` | edit/bash/webfetch: allow · task: deny |
+| `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (bookkeeping only — `phase-branches.md` rows + `implementation-plan.md` checkbox flips, by convention) · bash: allow with hard-blocked commands + push + scope denials · webfetch: allow · task: whitelisted 5 subagents only |
+| `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure; may be pointed at a git worktree for parallel work | edit/bash/webfetch: allow with hard-blocked commands · task: deny |
+| `phase-reviewer` | subagent | Read-only review, diffs against the base recorded in `phase-branches.md`, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model; also runs in finalize mode for `/finalize` | edit: deny · bash: allow with hard-blocked commands + commit/add/push denials |
+| `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks; same hard-blocked commands as `task-implementer` | edit/bash/webfetch: allow · task: deny |
 | `doc-updater` | subagent | Applies approved doc edits after issues are resolved, including deferred-issue entries | edit: allow (docs only) · bash: deny |
-| `architecture-reviewer` | subagent | Whole-codebase architecture scan (shallow modules, dead code, naming drift), independent of any phase; read-only | edit: deny · bash: allow with destructive-command + commit/add/push denylist |
+| `architecture-reviewer` | subagent | Whole-codebase architecture scan (shallow modules, dead code, naming drift), independent of any phase; read-only | edit: deny · bash: allow with hard-blocked commands + commit/add/push denials |
 
 `lead` is locked to its five named subagents — it cannot invoke any other subagent. `grill` is likewise locked down — it can spawn only the read-only `explore`/`scout` subagents, never the implementation agents (`scout` is optional in some installs; the allow entry is a harmless no-op when absent). None of the subagents can spawn further subagents, preventing unbounded delegation chains. `grill` and `planner` are separate primary agents used in separate sessions — closing one before opening the next is what keeps each session's context small and keeps `grill` from rushing to a deliverable.
 
@@ -736,8 +736,8 @@ Run `/review-phase <last-completed-n> <slug>` even if you skipped it earlier. Th
 **`/plan` or `/grill` for a new slug pulls in stale context from an old, related feature**  
 Check whether that old slug's docs are still sitting live under `docs/<old-slug>/`. If it's already merged, run `/archive <old-slug>` — a live-looking doc for finished work is exactly the stale-context trap archiving exists to prevent.
 
-**`scripts/autorun.sh` exits immediately with "Error: no 'opencode' CLI" or a connection/auth error**  
-This is a tooling failure, not an `AUTORUN_STATUS: FAIL` from the agent — `opencode` itself couldn't run. Confirm it's on `PATH` and headless auth is configured: `opencode run --agent lead "echo hi"` should work standalone before you trust the script with a real run.
+**`scripts/autorun.sh` reports `Error: 'opencode run' itself failed (non-zero exit)` or a connection/auth error**  
+This is a tooling failure, not an `AUTORUN_STATUS: FAIL` from the agent — `opencode` itself couldn't run (an `opencode` missing from `PATH` surfaces here too, with the shell's "command not found" text in the logged output). Confirm it's on `PATH` and headless auth is configured: `opencode run --agent lead "echo hi"` should work standalone before you trust the script with a real run.
 
 **`scripts/autorun.sh` stops with "no AUTORUN_STATUS trailer found"**  
 The script treats a missing trailer as `NEEDS_HUMAN` rather than assuming success — this is deliberate fail-closed behavior, not a bug. Check `docs/<slug>/autorun.log` for the full output of that step; either the command produced an unexpected response format (check for a recent edit to `implement-phase-auto.md`/`review-phase-auto.md`/`finalize.md` that dropped the trailer instructions) or something genuinely went sideways mid-response.
@@ -746,7 +746,7 @@ The script treats a missing trailer as `NEEDS_HUMAN` rather than assuming succes
 This was a real bug in an earlier version of the script: it grepped the *raw* `opencode run --format json` output directly for the string `AUTORUN_STATUS:`, which can also appear inside a `tool_use` event's payload — most commonly when `lead` reads the `phase-lifecycle` skill itself, since that skill's own documentation includes a literal example of the trailer format. A naive grep can't distinguish "the skill describing the format" from "the agent's actual report," and since JSON encodes embedded newlines as literal `\n` characters rather than real line breaks, the match can run on for many lines past where it looks like it should stop — which is exactly where line-numbered garbage like `104: AUTORUN_STATUS: FAIL...` comes from (that's the skill file's own content, not a real error). The fix is to actually parse the JSONL with `jq` and pull out only `type=="text"` events (the model's real output) before searching for the trailer — which is what the script does now. If you're seeing this, confirm `jq` is installed and check `docs/<slug>/autorun.log` for a "Warning: could not extract a final text response via jq" line — that means it silently fell back to the old, unreliable raw-grep path, and the result should be treated with suspicion.
 
 **`scripts/autorun.sh` stopped partway through and I want to resume**  
-It doesn't auto-skip completed phases on a re-run. Either edit the `PHASES` list at the top of the loop to start from the phase that failed, or just resume interactively from that point with `/implement-phase`/`/review-phase` — completed phases' branches and `phase-branches.md` rows are already in place either way.
+The stop is logged as `Stopped at: Phase N: <step>`, and the script's final log line prints the exact re-invocation to use. Fix whatever stopped it, then run `scripts/autorun.sh <slug> <next-phase-number>` — that second argument skips every phase before it, so committed phases aren't redone. The script never creates or switches branches, and phases stack (each branches off the previous phase's branch), so before resuming, check out the branch the next phase should build on. Or resume interactively from that point with `/implement-phase`/`/review-phase`.
 
 **`opencode run` reports "Session not found" or similar, even for a trivial prompt**  
 Some `opencode` versions/platforms have had `run` require a pre-existing session rather than creating one automatically (there's a link to the relevant tracking issue in `scripts/autorun.sh`'s header comment). Check `opencode run --help` and `opencode session --help` for your installed version; if this affects you, the script needs a small change to create a session explicitly per phase before running the command against it.
