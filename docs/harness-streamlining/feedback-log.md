@@ -214,3 +214,78 @@
   "post-hoist- or diet-emptied sections" (closes the Phase 4.4 scope gap above;
   the one known open case had already been fixed in 072b3e8).
 - feedback-log.md: this entry.
+
+---
+
+## 2026-10-11 — Phase 3 review
+
+**Issues found:**
+- Review verdict: pass — 0 blocking, 5 non-blocking. All five tasks'
+  evidence independently re-verified by the reviewer: tdd fixtures re-run
+  (11 self-demonstrated check reds incl. the order-only golden mutation
+  with byte-identical deny multiset), sim-skip scenarios, README claims
+  claim-by-claim.
+- Carried risks honored: (1) order-encoded golden — verified with an
+  order-only mutation red; (2) string+map parser shapes both handled,
+  `opencode debug agent`/`debug config` presence never trusted as
+  protection — lesson recorded in check 1's comment, the check avoids
+  both commands entirely.
+- NB1 (fixed, a908e38): check 6 vacuous-green when grill.md's task block
+  parses empty — added empty-parse guard (`grill task block parsed empty
+  — frontmatter shape changed?`), red demonstrated on two fixture
+  mutations (entries removed; `task:`→`tasks:`).
+- NB2 (fixed, 0155f53): hoist-guard grep indent-coupled
+  (`^  "permission"`) — loosened to `"permission"[[:space:]]*:` (any
+  depth/formatting); minified-reflow fixture went pre-fix green →
+  post-fix red; comment updated; FAIL message "top-level" wording
+  dropped to match semantics.
+- Deliberate deferral (suggestion, not an issue): the italic-pointer
+  citation check not implemented in Phase 3 — it was never in the plan's
+  task list; timing argument under Risks.
+
+**Deferred issues (confirmed but not fixed this round):**
+- NB3: no committed regression harness for doctor.sh itself —
+  red-detection behavior lives only in commit-message evidence + the two
+  env seams (DOCTOR_EXTRA_CHECKS / DOCTOR_SIM_SKIP_VERIFY). Accepted as
+  v1 debt per the review's sanctioned alternative; a self-test driver
+  (temp-copy mutators) is a candidate if a future phase edits doctor.sh.
+  If Phase 4.5 ("doctor exit 0") ever gets the self-test, 4.5 should run
+  it too.
+- NB4: check 3 covers `git add -A` only; `git add .`, `git add --all`,
+  `git commit -a` unguarded. Matches spec FR3's literal wording — in
+  scope as-is; hardening candidate if the spec ever widens.
+- New residual from the NB2 fix (noted by the resolver, not a review
+  finding): check 8 is whitespace-coupled (`/"ignore": \[/` expects
+  one-entry-per-line pretty JSON) — a minified opencode.json would
+  false-RED it. Failure is in the safe (loud) direction; noted for a
+  future review.
+
+**Risks for future phases:**
+- Phase 4.1/4.2 prose pass: check 1 reads frontmatter only (bodies
+  safe), but check 3 greps all of `.opencode/` — the prose pass must not
+  write the forbidden staging string into any `.opencode/` file; the
+  anymatch deny also refuses commit messages naming it (precedent: the
+  `git ad[d]` obfuscation in commit 63ad967).
+- Phase 4.5 acceptance ("doctor exit 0") guards green-ness only — per
+  deferred NB3 it wouldn't catch doctor losing red-detection ability.
+- Phase 5: README re-touch must preserve check 5's parseable claim
+  phrase (NB5 coupling — check 5's regex couples to README wording; the
+  failure message names the function to update); AGENTS.md headroom 48
+  lines; the italic-pointer citation check (suggested in Phase 2's log)
+  fits Phase 5 better than Phase 3 — the 4.4 sweep reshuffles pointers,
+  checking before it would churn; decide explicitly in Phase 5.
+- Upstream-version risk unchanged: the shape-based drift check can't
+  notice an OpenCode semantic change; the effective-action smoke
+  candidate task is still open — Phase 5/finalize is its natural home.
+
+**Doc changes applied:**
+- implementation-plan.md Task 3.2: appended a review-time Note recording
+  check 1's as-shipped approach (order-sensitive per-agent golden parsed
+  from in-repo agent frontmatter; `opencode debug config` deliberately
+  unused) so a future agent doesn't "correct" the implementation back to
+  the task's literal wording.
+- architecture.md: Data flow — verification-time sentence corrected:
+  doctor parses frontmatter bash streams against an order-sensitive
+  golden; `opencode debug config` deliberately unused (presence in
+  resolved output proves nothing; see doctor.sh check 1 header).
+- feedback-log.md: this entry.

@@ -95,6 +95,12 @@ post-diet repo — a single command any future phase can consult.
       Each check verified against a deliberately-violated fixture copy in
       `.scratch/`. (acceptance: all 8 green on repo; each individually
       demonstrated red on its fixture) [type: tdd]
+      Note (Phase 3 review): check 1 deliberately skips `opencode debug
+      config` (it exists) — resolved-output presence can't prove non-
+      disarmament (gate-experiments.md Experiment B lesson) and its merged
+      global layer makes any golden machine-dependent; the shipped check is
+      an order-sensitive per-agent golden parsed from in-repo agent
+      frontmatter.
 - [x] Task 3.3: Positive-presence check + markers: add
       `<!-- invariant: … -->` comments to phase-lifecycle part B's
       commit-before-report and clean+landed-verification steps; doctor

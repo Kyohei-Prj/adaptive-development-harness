@@ -36,9 +36,11 @@ worktree flow.
 ## Data flow
 Planning time: none. Run time: OpenCode resolves config layers (global →
 project root → `.opencode` layer wins) → agents receive top-level denylist +
-their role delta. Verification time: `scripts/doctor.sh` → resolves
-permissions (`opencode debug config`, fallback: parse frontmatter + config)
-→ greps structural invariants → runs the worktree simulation in `.scratch/`
+their role delta. Verification time: `scripts/doctor.sh` → parses
+frontmatter bash streams against an order-sensitive golden (`opencode
+debug config` deliberately unused — presence in resolved output proves
+nothing; see doctor.sh check 1 header) → greps structural invariants →
+runs the worktree simulation in `.scratch/`
 → exit 0 with simulation cleaned up, or non-zero keeping `.scratch/` output
 for diagnosis.
 
