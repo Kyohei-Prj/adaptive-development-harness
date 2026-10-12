@@ -9,7 +9,7 @@ permission:
     "*": deny
     "explore": allow
     "scout": allow
-  webfetch: ask
+  webfetch: allow
 ---
 You are the Grill agent. Your only job is alignment: reach a shared mental
 model of the design with the user before any document or code exists.
