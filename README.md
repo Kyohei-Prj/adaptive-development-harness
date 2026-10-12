@@ -167,7 +167,6 @@ your-project/
 │   ├── autorun.sh                       # Fully hands-off driver: one `opencode run` process per phase, genuinely fresh context each time
 │   └── doctor.sh                        # Static self-check suite for this repo (harness-repo-only — never shipped to user projects)
 └── docs/
-    ├── _templates/                      # Source templates (optional reference copies)
     ├── _archive/                        # Merged slugs' docs, moved here by /archive to avoid stale-doc drift
     └── <slug>/                          # One folder per feature/fix/project
         ├── architecture.md
@@ -370,7 +369,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 
 **Extending or demonstrating it.** Two environment-variable seams exist so neither artificial pass/fail fixtures nor deliberate broken-check demos have to be committed into the script: `DOCTOR_EXTRA_CHECKS=<path>` sources extra checks on top of the shipped ones, and `DOCTOR_SIM_SKIP_VERIFY=1` drops the simulation's verification step to reproduce the silent work-loss bug that step exists to prevent. Both are unset in normal use; the script's header comment documents them.
 
-**Harness-only, and why no CI in v1.** doctor.sh asserts claims about *this* repo's own files — a project that merely adopted the harness has nothing for it to check — so it deliberately stays out of the [copy list](#step-1--open-opencode-and-initialize) and ships to nobody. Wiring it into CI would add maintenance surface with no consumer yet; the decision and its rejected alternatives are recorded under "Key decisions & trade-offs" in `docs/harness-streamlining/architecture.md`.
+**Harness-only, and why no CI in v1.** doctor.sh asserts claims about *this* repo's own files — a project that merely adopted the harness has nothing for it to check — so it deliberately stays out of the [copy list](#step-1--open-opencode-and-initialize) and ships to nobody. Wiring it into CI would add maintenance surface with no consumer yet; the decision and its rejected alternatives are recorded under "Key decisions & trade-offs" in `docs/_archive/harness-streamlining/architecture.md`.
 
 **Requirements:** bash ≥ 4.4 and git ≥ 2.32 (the version the simulation's hermetic `GIT_CONFIG_*` config isolation reaches); nothing else.
 
@@ -687,7 +686,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Hard-blocked commands are intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, and `git branch -D` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
-**That denylist is deliberately duplicated across the 5 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
+**That denylist is deliberately duplicated across the 5 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/_archive/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
 
 **`/finalize` and `/archive` are manual, on purpose.** Nothing in this workflow merges to main or archives docs automatically — `/finalize` prepares the branch, you merge it, then `/archive` cleans up. `lead` will remind you of both at the natural points (end of `/autorun`, end of the last `/review-phase`), but won't run either without you invoking them.
 

@@ -24,6 +24,8 @@ permission:
     "*push --force*": deny
     "*push -f *": deny
     "*branch -D*": deny
+    "git worktree remove --force*": deny
+    "*worktree remove --force*": deny
   webfetch: allow
   task: deny
 ---

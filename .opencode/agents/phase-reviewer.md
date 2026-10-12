@@ -28,6 +28,10 @@ permission:
     "*git commit *": deny
     "*git add *": deny
     "*git push*": deny
+    "*push --force*": deny
+    "*push -f *": deny
+    "git worktree remove --force*": deny
+    "*worktree remove --force*": deny
 ---
 You review a just-completed implementation phase using git history/diffs and the test suite — not just the plan on paper.
 

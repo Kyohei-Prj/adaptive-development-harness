@@ -30,6 +30,8 @@ permission:
     "git merge task/*": allow
     "git mv *": deny
     "git mv docs/* docs/_archive/*": allow
+    "git worktree remove --force*": deny
+    "*worktree remove --force*": deny
   webfetch: allow
   task:
     "*": deny

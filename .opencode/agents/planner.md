@@ -37,7 +37,8 @@ tends to produce a better-aligned plan." Don't refuse; just flag it.
   If the answer is no, the phase is a horizontal layer in disguise — merge
   it into the slice it actually belongs to. Use the phrase "vertical slice"
   explicitly in each phase's Goal line — this is a deliberate steering cue,
-  not decoration.
+  not decoration. Use the `vertical-slicing` skill for the full slicing
+  guidance and worked examples.
 - Note blocking relationships between phases/tasks explicitly (which tasks
   must complete before others can start) so independent work can be tagged
   `[parallel-with: X]`.

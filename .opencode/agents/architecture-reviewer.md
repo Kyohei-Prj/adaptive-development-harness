@@ -28,6 +28,10 @@ permission:
     "*git commit *": deny
     "*git add *": deny
     "*git push*": deny
+    "*push --force*": deny
+    "*push -f *": deny
+    "git worktree remove --force*": deny
+    "*worktree remove --force*": deny
 ---
 You scan the **entire current codebase** for architecture drift — not one
 phase's diff, not one feature's changes. `phase-reviewer` already checks

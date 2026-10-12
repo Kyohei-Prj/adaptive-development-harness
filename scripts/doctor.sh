@@ -110,8 +110,8 @@ register_check() { CHECKS+=("$1"); }
 #     so the golden diff is order-sensitive by construction.
 #   * Per-agent reality, not a uniform shared-17 (feedback-log NB5): the
 #     5 map-form agents differ — architecture-reviewer and phase-reviewer
-#     carry 23 denies each, task-implementer and issue-resolver 19, and
-#     lead 23 denies + 2 scoped allows (`git merge task/*`,
+#     carry 27 denies each, task-implementer and issue-resolver 21, and
+#     lead 25 denies + 2 scoped allows (`git merge task/*`,
 #     `git mv docs/* docs/_archive/*`).
 #   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 5 above)
 #     and whole-string `bash: deny` (doc-updater, planner, grill) — the
@@ -162,6 +162,10 @@ architecture-reviewer	deny	*branch -D*
 architecture-reviewer	deny	*git commit *
 architecture-reviewer	deny	*git add *
 architecture-reviewer	deny	*git push*
+architecture-reviewer	deny	*push --force*
+architecture-reviewer	deny	*push -f *
+architecture-reviewer	deny	git worktree remove --force*
+architecture-reviewer	deny	*worktree remove --force*
 doc-updater	string	deny
 grill	string	deny
 issue-resolver	map	
@@ -185,6 +189,8 @@ issue-resolver	deny	*git clean -f*
 issue-resolver	deny	*push --force*
 issue-resolver	deny	*push -f *
 issue-resolver	deny	*branch -D*
+issue-resolver	deny	git worktree remove --force*
+issue-resolver	deny	*worktree remove --force*
 lead	map	
 lead	allow	*
 lead	deny	git push --force*
@@ -212,6 +218,8 @@ lead	deny	git merge *
 lead	allow	git merge task/*
 lead	deny	git mv *
 lead	allow	git mv docs/* docs/_archive/*
+lead	deny	git worktree remove --force*
+lead	deny	*worktree remove --force*
 phase-reviewer	map	
 phase-reviewer	allow	*
 phase-reviewer	deny	git push --force*
@@ -237,6 +245,10 @@ phase-reviewer	deny	*branch -D*
 phase-reviewer	deny	*git commit *
 phase-reviewer	deny	*git add *
 phase-reviewer	deny	*git push*
+phase-reviewer	deny	*push --force*
+phase-reviewer	deny	*push -f *
+phase-reviewer	deny	git worktree remove --force*
+phase-reviewer	deny	*worktree remove --force*
 planner	string	deny
 task-implementer	map	
 task-implementer	allow	*
@@ -259,6 +271,8 @@ task-implementer	deny	*git clean -f*
 task-implementer	deny	*push --force*
 task-implementer	deny	*push -f *
 task-implementer	deny	*branch -D*
+task-implementer	deny	git worktree remove --force*
+task-implementer	deny	*worktree remove --force*
 GOLDEN
 )
   files=("$REPO_ROOT"/.opencode/agents/*.md)
