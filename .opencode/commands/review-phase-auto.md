@@ -18,7 +18,8 @@ Steps:
 
 - **Any `issue-resolver` reports FAIL.** Do not retry indefinitely, do not reinterpret the issue.
   - Exception: if the failure is isolated to one non-blocking issue and every blocking issue was resolved successfully, you may treat that single issue as a **deferred issue** (logged via `doc-updater` in step 3) and continue — a stalled non-blocking cosmetic fix shouldn't halt an otherwise-successful automated run. Any FAIL on a **blocking** issue always stops the whole run; never defer a blocking issue automatically.
-- **Any destructive-command refusal surfaces** from `issue-resolver` (see its hard-blocked commands paragraph) that blocks resolving a blocking issue as described.
+- **A hard-block refusal surfaces** from `issue-resolver` (the denylist in its frontmatter: force-push, `rm -rf`, `reset --hard`, `git clean -f`, branch deletion, `worktree remove --force`) that blocks resolving a blocking issue as described. Never worked around.
+- **An incidental bash denial `issue-resolver` couldn't clear in one retry** (its summary's `Denied command:` line — `external_directory` auto-reject, or a `cd`-compound opencode refused). It already tried one safe rewrite per its recovery section; a relayed denial is that retry exhausted, so treat it as a stop rather than retrying it yourself.
 
 On a stop condition that isn't the single-non-blocking-issue exception above: do NOT commit. Produce the final report with status `FAIL` (genuine failure) or `NEEDS_HUMAN` (a judgment call, e.g. an ambiguous issue description that needs human interpretation), with enough detail that a human reading only this output can act on it later without having watched the run.
 

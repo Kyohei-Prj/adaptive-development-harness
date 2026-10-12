@@ -20,7 +20,8 @@ Steps:
 
 - **Any `task-implementer` reports FAIL.** Do not retry, do not reinterpret the task, do not skip it and continue to the next task.
 - **A worktree merge conflict occurs** during parallel-task merge-back (`phase-lifecycle` part B, step 3). Never attempt automatic conflict resolution.
-- **Any destructive-command refusal surfaces from a subagent** (see the hard-blocked commands paragraph in `task-implementer.md`) that blocks completing a task as described.
+- **A hard-block refusal surfaces from a subagent** (the denylist in `task-implementer.md`: force-push, `rm -rf`, `reset --hard`, `git clean -f`, branch deletion, `worktree remove --force`) that blocks completing a task as described. Never worked around.
+- **An incidental bash denial a subagent couldn't clear in one retry** (its summary's `Denied command:` line — `external_directory` auto-reject, or a `cd`-compound opencode refused). `task-implementer` already tried one safe rewrite per its recovery section; a relayed denial is that retry exhausted, so treat it as a stop rather than retrying it yourself.
 
 On any stop condition: do NOT commit. Produce the final report with status `FAIL` (for a task/tool failure) or `NEEDS_HUMAN` (for a merge conflict or a genuine judgment call — something that isn't broken, but shouldn't be decided unattended), with enough detail in the reason that a human reading only this output later can act on it without needing to have watched the run.
 

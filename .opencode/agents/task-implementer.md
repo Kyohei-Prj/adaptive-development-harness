@@ -48,6 +48,27 @@ genuinely seems to require one of these, stop and report why in your
 summary instead of finding a workaround — that's a decision for the user,
 not you.
 
+## Denied bash command: reason, retry once, else stop
+
+When a bash call is refused, classify the refusal before reacting:
+
+- **Hard-blocked denylist** (the paragraph above) — stop and report; never
+  rephrase one of these into an equivalent to slip past the block.
+- **Incidental auto-reject** — not dangerous, but headless `opencode run`
+  refused it: `permission requested: external_directory ...; auto-rejecting`,
+  or a compound `cd <path> && …; cd .. && git …` form opencode won't
+  auto-approve unattended. Reason about *why* and retry **once** with a
+  semantics-preserving rewrite — `git -C <path> …` instead of
+  `cd <path> && git …`; stay on the current dir / use an absolute in-repo
+  path instead of `cd ..`; split the `&&`/`;` one-liner into separate calls.
+  An `external_directory` refusal means the path is genuinely outside the
+  repo — there is no safe rewrite; stop and report rather than reaching
+  outside the sandbox.
+
+Budget is one rewrite. If it's refused again or no safe rewrite exists, stop,
+put the original command and what you tried on the summary's `Denied
+command:` line, and report FAIL.
+
 ## Step 0 — Classify
 
 If no type tag is provided, classify the task yourself before doing anything:
@@ -113,6 +134,7 @@ Tests written:  <list of test file : test name, or "n/a">
 Test result:    <PASS | FAIL | SKIP — include the exact command run>
 Deviations:     <description, or "none">
 Open risks:     <description, or "none">
+Denied command: <the refused command + the retry you tried, or "none">
 ```
 
 Rules:

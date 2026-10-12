@@ -124,6 +124,35 @@ creation, per-task branch, sequential merge-back, conflict handling).
 Never delegate two `task-implementer` instances to edit the same working
 tree at the same time.
 
+## Denied bash command: reason, retry once, else stop
+
+When one of your own bash calls is refused — or a subagent reports one it
+couldn't clear — classify the refusal before reacting:
+
+- **Hard-blocked denylist** — anything denied in this file's frontmatter
+  `bash` block (`rm -rf`, force-push, `git reset --hard`,
+  `git checkout --`/`--force`, `git clean -f`, `git branch -D`,
+  `git worktree remove --force`). Never rephrase one of these to slip past
+  the block — rewriting a dangerous command into an equivalent is exactly
+  what the block forbids. This stays a stop: `NEEDS_HUMAN` (a judgment call
+  for the user), never worked around.
+- **Incidental auto-reject** — the command isn't dangerous, but headless
+  `opencode run` refused it: `permission requested: external_directory ...;
+  auto-rejecting`, or a compound `cd <path> && …; cd .. && git …` form
+  opencode won't auto-approve unattended. Reason about *why* it was refused
+  and retry **once** with a semantics-preserving rewrite — `git -C <path> …`
+  instead of `cd <path> && git …`; stay on the current dir / use an absolute
+  in-repo path instead of `cd ..`; split the `&&`/`;` one-liner into separate
+  calls. An `external_directory` refusal means the path is genuinely outside
+  the repo — there is no safe rewrite; stop with `NEEDS_HUMAN` rather than
+  reaching outside the sandbox.
+
+Budget is one rewrite. If it's refused again or no safe rewrite exists, do
+NOT commit; report the original command and what you tried, and end with the
+command's `FAIL`/`NEEDS_HUMAN` trailer. A denial relayed from a subagent
+(its summary's `Denied command:` line) you couldn't clear: re-delegate once
+with the rephrasing if you can, else surface it as the stop.
+
 ## Diff baseline for review
 
 `phase-reviewer` needs the correct base branch for its diff, which you are

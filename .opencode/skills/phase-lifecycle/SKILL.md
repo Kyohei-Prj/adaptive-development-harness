@@ -127,7 +127,9 @@ AUTORUN_STATUS: NEEDS_HUMAN: <one-line reason>
   it wasn't safe to skip).
 - `NEEDS_HUMAN` — nothing is broken, but something requires a judgment
   call an unattended run shouldn't make alone (a worktree merge conflict,
-  an ambiguous issue description, etc.).
+  an ambiguous issue description, an incidental bash denial whose only
+  safe rewrite is impossible — e.g. an `external_directory` path genuinely
+  outside the repo — etc.).
 
 Produce this trailer every time, whether the command was invoked
 interactively or headlessly — there's no reliable way to tell which from
