@@ -9,12 +9,13 @@ This command is meant to be invoked non-interactively (`opencode run --agent lea
 Follow the `phase-lifecycle` skill for the mechanical procedures below (parts A, B, D).
 
 Steps:
-1. Phase branch setup — see `phase-lifecycle` skill, part A. (Slug: $2, phase: $1.)
-2. Read docs/$2/implementation-plan.md and find Phase $1's task list.
-3. Read docs/$2/feedback-log.md if it exists. If it contains "Risks for future phases" or "Deferred issues" entries relevant to Phase $1, include them in the final report (below) as a heads-up. Purely informational — never blocks.
-4. Delegate tasks — see `phase-lifecycle` skill, part B, for parallel `[parallel-with: ...]` groups (worktree isolation, sequential merge-back). A merge conflict here is a stop condition (below), not something to resolve automatically.
-5. Compile the phase summary from each task-implementer's summary block: Task → Approach → Test result → Deviations/risks.
-6. If everything above succeeded with no unresolved problems: stage and commit the doc changes (including `phase-branches.md`): `git add docs/$2/ && git commit -m "feat($2): phase $1 complete"`. Then produce the final report (see format below) with status `OK`.
+1. Mode gate — read Phase $1's `[mode: …]` tag from its `## Phase $1 — …` heading area (on the heading line or immediately under it) in `docs/$2/implementation-plan.md` before anything else; tag semantics: the `planning-docs` skill, "Phase mode tags". `[mode: sdd]`, `[mode: autorun]`, or an absent tag (= `[mode: sdd]`, backward compatible — proceed exactly as today) → continue with the steps below unchanged. `[mode: interactive]` → stop: this phase belongs to the human pair loop at `/interactive` (which lands in a later phase of this workflow-patterns work — until it ships, the refusal stands on its own and the pointer is forward-looking). Do not run phase branch setup, do not delegate, do not commit — the gate sits before step 2 on purpose so a refusal mutates no git state (no phase branch, no `phase-branches.md` row, no worktree) and leaves nothing to commit. Produce the final report explaining the refusal, ending with exactly this trailer line: `AUTORUN_STATUS: NEEDS_HUMAN: phase $1 is [mode: interactive]`.
+2. Phase branch setup — see `phase-lifecycle` skill, part A. (Slug: $2, phase: $1.)
+3. Read docs/$2/implementation-plan.md and find Phase $1's task list.
+4. Read docs/$2/feedback-log.md if it exists. If it contains "Risks for future phases" or "Deferred issues" entries relevant to Phase $1, include them in the final report (below) as a heads-up. Purely informational — never blocks.
+5. Delegate tasks — see `phase-lifecycle` skill, part B, for parallel `[parallel-with: ...]` groups (worktree isolation, sequential merge-back). A merge conflict here is a stop condition (below), not something to resolve automatically.
+6. Compile the phase summary from each task-implementer's summary block: Task → Approach → Test result → Deviations/risks.
+7. If everything above succeeded with no unresolved problems: stage and commit the doc changes (including `phase-branches.md`): `git add docs/$2/ && git commit -m "feat($2): phase $1 complete"`. Then produce the final report (see format below) with status `OK`.
 
 ## Stop conditions — do not attempt to work around any of these
 
@@ -22,6 +23,7 @@ Steps:
 - **A worktree merge conflict occurs** during parallel-task merge-back (`phase-lifecycle` part B, step 3). Never attempt automatic conflict resolution.
 - **A hard-block refusal surfaces from a subagent** (the denylist in `task-implementer.md`: force-push, `rm -rf`, `reset --hard`, `git clean -f`, branch deletion, `worktree remove --force`) that blocks completing a task as described. Never worked around.
 - **An incidental bash denial a subagent couldn't clear in one retry** (its summary's `Denied command:` line — `external_directory` auto-reject, or a `cd`-compound opencode refused). `task-implementer` already tried one safe rewrite per its recovery section; a relayed denial is that retry exhausted, so treat it as a stop rather than retrying it yourself.
+- **Phase $1 is `[mode: interactive]`** (Mode gate, step 1) — a `NEEDS_HUMAN` stop with the gate's exact trailer, emitted before anything runs. Nothing is broken; the phase is simply not delegable.
 
 On any stop condition: do NOT commit. Produce the final report with status `FAIL` (for a task/tool failure) or `NEEDS_HUMAN` (for a merge conflict or a genuine judgment call — something that isn't broken, but shouldn't be decided unattended), with enough detail in the reason that a human reading only this output later can act on it without needing to have watched the run.
 
@@ -32,7 +34,7 @@ Follow the `phase-lifecycle` skill, part D, for the `AUTORUN_STATUS:` trailer fo
 ```
 ## Phase $1 Implementation Report — $2
 
-<phase summary: task results, and any risks/deferred-issues heads-up from step 3>
+<phase summary: task results, and any risks/deferred-issues heads-up from step 4>
 
 AUTORUN_STATUS: OK
 ```
