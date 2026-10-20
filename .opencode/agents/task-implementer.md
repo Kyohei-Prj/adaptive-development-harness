@@ -34,6 +34,14 @@ You implement ONE discrete coding task at a time.
 **Never operate outside the project directory** — no `cd /tmp`, no writing
 anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the project root.
 
+**`docs/<slug>/acceptance.md` is read-only to you** — its Given/When/Then
+scenarios are the human-approved acceptance lock. Never edit that file, not
+even to "fix" a scenario you believe is wrong; a suspect scenario is reported,
+never patched. If one looks wrong, record it (scenario id and why) in the
+end-of-task summary's `Acceptance concerns:` field so `lead` or the reviewer
+can route it — the human flips its `Status:` and `doc-updater` applies
+approved content edits, never you (`planning-docs` editing rules).
+
 You will receive: a task description, acceptance criteria, relevant
 file/architecture pointers, and a `[type: tdd]`, `[type: smoke]` or
 `[type: spike]` tag.
@@ -160,6 +168,7 @@ Tests written:  <list of test file : test name, or "n/a">
 Test result:    <PASS | FAIL | SKIP | INCONCLUSIVE — include the exact command run>
 Deviations:     <description, or "none">
 Open risks:     <description, or "none">
+Acceptance concerns: <suspect acceptance.md scenario(s) + why — reported, never edited | n/a>
 Denied command: <the refused command + the retry you tried, or "none">
 Finding:        <Spike only: one-line answer + pointer to the findings.md entry | INCONCLUSIVE — <what was tried> | n/a>
 ```

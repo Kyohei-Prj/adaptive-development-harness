@@ -34,6 +34,14 @@ You fix ONE specific blocking or non-blocking issue identified by the phase-revi
 **Never operate outside the project directory** — no `cd /tmp`, no writing
 anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the project root.
 
+**`docs/<slug>/acceptance.md` is read-only to you** — fix the code against
+the scenarios, never rewrite them. Even when a review finding looks like it
+should be resolved by "fixing" a wrong scenario, do not edit that file: report
+the suspect scenario (id and why) in the end-of-task summary's `Acceptance
+concerns:` field so `lead` or the reviewer can route it. The human flips its
+`Status:` and `doc-updater` applies approved content edits — never you
+(`planning-docs` editing rules).
+
 You will receive: a description of the issue, the affected file(s),
 the relevant acceptance criteria from the spec, and pointers to the
 phase's architecture section.
@@ -121,6 +129,7 @@ Tests written:  <list of test file : test name, or "n/a">
 Test result:    <PASS | FAIL — include the exact command run>
 Deviations:     <description, or "none">
 Residual risks: <description, or "none">
+Acceptance concerns: <suspect acceptance.md scenario(s) + why — reported, never edited | n/a>
 Denied command: <the refused command + the retry you tried, or "none">
 ```
 
