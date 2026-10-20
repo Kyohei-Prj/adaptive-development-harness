@@ -127,7 +127,9 @@ register_check() { CHECKS+=("$1"); }
 # the golden machine-dependent). Parser: awk over the regular frontmatter
 # shape — deliberately no python3/PyYAML prerequisite (the README lists
 # neither); if the frontmatter ever grows irregular, the parse output
-# drifts and this check goes red loudly, never a silent skip.
+# drifts and this check goes red loudly — for whatever the awk pattern
+# reads over; an irregularity wholly outside that pattern could still slip
+# through silently (same parser-philosophy caveat as CHECK 10).
 #
 # Regenerating the golden after an INTENTIONAL permission change: run this
 # check on the changed repo — the FAIL diff shows the new reality as `+`
@@ -526,9 +528,12 @@ check_invariant_markers() {
 #   '<dimension>|<golden ids>|<carrying files, source of truth first>'
 # A file carries an id when its text contains the `[<dimension>: <id>]`
 # form; a `|`-list (`[type: tdd|smoke]`) counts as every member, and the
-# template placeholder `[type: ...]` is NOT an id — ids are `[a-z]+`, so an
-# irregular id drops out of the parse and goes red as "missing", loudly,
-# never as a silent skip (same parser philosophy as CHECK 1).
+# template placeholder `[type: ...]` is NOT an id. Ids are detected over the
+# `[a-z|-]` character class (lowercase letters, `|`, `-`) — the shape the
+# vocabulary actually uses — so a lost golden id drops out of the parse and
+# goes red as "missing", loudly; but an off-vocabulary id using some OTHER
+# character also drops out and slips past the extra direction silently (same
+# parser philosophy, and same caveat, as CHECK 1).
 #
 # Comparison is file-vs-golden, not pairwise-file-to-file, so every FAIL
 # names exactly one file and one id, and drift is caught in EITHER
@@ -564,7 +569,7 @@ check_tag_vocabulary_consistency() {
         continue
       fi
       if [[ "$rel" == "$src" ]]; then role="source of truth"; else role="consumer"; fi
-      have=$(grep -oE "\[$dim:[[:space:]]*[a-z|]+\]" "$file" \
+      have=$(grep -oE "\[$dim:[[:space:]]*[a-z|-]+\]" "$file" \
         | sed -E "s/^\[$dim:[[:space:]]*//; s/\]$//" | tr '|' '\n' | sort -u) || true
       missing=$(comm -23 <(printf '%s\n' $ids | sed '/^$/d' | sort -u) \
                          <(printf '%s\n' $have | sed '/^$/d' | sort -u)) || true
