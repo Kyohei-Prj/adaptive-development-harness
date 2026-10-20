@@ -103,7 +103,37 @@ Report in this order:
    - `[type: tdd]` → verify test files were created or modified and that the relevant tests currently pass. Flag any TDD task with no new/changed tests, or with failing tests.
    - `[type: smoke]` → verify a smoke check was run. Flag if no check is evident.
 
-2. **Blocking issues** — issues that must be resolved before the next phase begins. A blocking issue is one that:
+2. **Acceptance scenario compliance**
+   If `docs/<slug>/acceptance.md` does not exist, report "n/a — no
+   acceptance.md for this slug" and stop here: most slugs never have one
+   (the file exists only when the Pattern Record flagged high mistake
+   cost), so absence is not a finding. If it exists:
+   - **Draft gate:** a file still at `Status: Draft` that this slug's plan
+     expects approved is a **blocking** finding — implementation must not
+     run against unapproved scenarios; only the human flips `Status:`
+     (`planning-docs` editing rules).
+   - **Green evidence per scenario:** for each numbered scenario, name
+     the test or check run in this phase that proves it; otherwise flag
+     the scenario as **uncovered** — a silently skipped scenario is a
+     broken review, not a clean one.
+   - **The lock:** run `git diff <base>...HEAD -- docs/<slug>/acceptance.md`,
+     `<base>` read from this phase's row in `phase-branches.md` (the same row
+     the Diff baseline section uses; finalize mode's Phase 1 row applies
+     there too). A non-empty diff is blocking unless
+     `docs/<slug>/feedback-log.md` carries a dated entry logging that the
+     user approved that scenario change, naming the scenario ids the diff
+     touches; an unlogged change is **blocking** — `task-implementer` and
+     `issue-resolver` may report suspect scenarios, never edit them, and
+     `doc-updater` edits only with such a logged approval.
+   - **Routed concerns:** scan this phase's `task-implementer` and
+     `issue-resolver` summaries for `Acceptance concerns:` entries and rule
+     on each reported scenario: confirm it as a finding here, or dismiss it
+     with a reason.
+
+   Classify what this section raises into the sections below like any other
+   finding.
+
+3. **Blocking issues** — issues that must be resolved before the next phase begins. A blocking issue is one that:
    - Directly violates an acceptance criterion in spec.md
    - Leaves the codebase in a broken state (failing tests, import errors, crash on startup)
    - Creates a structural dependency that would cause a future phase to fail
@@ -115,10 +145,10 @@ Report in this order:
      Blocking because: <one sentence — which criterion it violates or which future phase it would break>
    ```
 
-3. **Non-blocking findings** — tech debt, style issues, minor risks, missed edge cases that don't prevent future phases. Note these for the feedback log but flag clearly that they don't require resolution now.
+4. **Non-blocking findings** — tech debt, style issues, minor risks, missed edge cases that don't prevent future phases. Note these for the feedback log but flag clearly that they don't require resolution now.
 
-4. **Risks for future phases** — architecture drift, scope creep, or concerns about upcoming phases uncovered by reviewing this one.
+5. **Risks for future phases** — architecture drift, scope creep, or concerns about upcoming phases uncovered by reviewing this one.
 
-5. **Suggested doc edits** — concrete, targeted changes to `architecture.md`, `spec.md`, or `implementation-plan.md`.
+6. **Suggested doc edits** — concrete, targeted changes to `architecture.md`, `spec.md`, or `implementation-plan.md`.
 
 Make no edits yourself.

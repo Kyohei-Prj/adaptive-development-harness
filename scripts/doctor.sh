@@ -736,6 +736,79 @@ check_mode_gate_contract() {
   return "$bad"
 }
 
+# CHECK 12 — acceptance-review contract (docs/workflow-patterns spec FR6
+# clauses (a) and (b), made durable per FR10; the static half of Task 3.4's
+# fixture-run evidence, same durability reasoning as CHECK 11: the scratch
+# fixture's blocking/not-blocking verdicts vanish with .scratch/, this check
+# is what survives — a later prose-condensation pass must not be able to
+# delete the reviewer's "Acceptance scenario compliance" section or its
+# diff lock while doctor stays green).
+#
+# Golden-presence contract over prose, as in check_invariant_markers /
+# CHECK 11: the section may legitimately be reworded, but a deliberate
+# change updates the prompt and this check in the same commit, with a
+# reason. Anchors are deliberately tight — exact substrings and single-line
+# regexes, NOT windowed -A12/-A14 greps (the fragility the Phase 2 review
+# flagged in CHECK 11): every assertion is a whole-file presence test, and
+# a missing file fires one precise line with that file's other assertions
+# skipped (they would only echo it).
+#
+# What is deliberately NOT asserted: the Draft-gate and absent-file rules
+# the section also carries — the check's mandate (plan Task 3.4) is the
+# section + diff rule; those behaviours stay fixture-tested prose.
+#
+# Test seam (same spirit as check_mode_gate_contract): an optional first
+# argument overrides $REPO_ROOT, so a throwaway harness drives this check
+# against scratch fixture trees — pre-change or tampered prompt copies —
+# without touching tracked files.
+check_acceptance_review_contract() {
+  local root="${1:-$REPO_ROOT}" bad=0 fp rp
+  fp=".opencode/agents/phase-reviewer.md"
+  rp=".opencode/commands/review-phase.md"
+  # The reviewer prompt — the section carrying FR6(a) green evidence per
+  # scenario / uncovered, and the FR6(b) diff lock with its logged approval.
+  if [[ ! -f "$root/$fp" ]]; then
+    printf 'acceptance-review drift: %s is missing — the "Acceptance scenario compliance" section cannot be checked (spec FR6; a deliberate rename/move updates the file and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+    bad=1
+  else
+    grep -qF 'Acceptance scenario compliance' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — no "Acceptance scenario compliance" report section — the phase review must report per-scenario evidence and run the acceptance.md diff lock (spec FR6; a deliberate removal of this review duty updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+    grep -qiE 'green evidence' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — the section no longer demands green evidence per scenario — every numbered scenario in docs/<slug>/acceptance.md must name the test/check that proves it (spec FR6 clause (a); a deliberate change updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+    grep -qiE 'scenario[^.]*uncovered|uncovered[^.]*scenario' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — the section no longer flags an unproven scenario as uncovered — missing proof must be reported explicitly, never silently omitted (spec FR6 clause (a); a deliberate change updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+    grep -qF -- 'git diff <base>...HEAD -- docs/<slug>/acceptance.md' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — the acceptance.md diff-lock command is gone — the review must run git diff <base>...HEAD -- docs/<slug>/acceptance.md (<base> read from this phase'"'"'s row in docs/<slug>/phase-branches.md) to catch scenario edits (spec FR6 clause (b); a deliberate change to the diff form updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+    grep -qF 'feedback-log.md' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — the section no longer names the logged approval as the only exception to a non-empty acceptance.md diff — user-approved scenario edits are logged in docs/<slug>/feedback-log.md (spec FR6 clause (b); a deliberate change updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+    grep -qiE 'unlogged[^.]*blocking' "$root/$fp" || {
+      printf 'acceptance-review drift: %s — an unlogged acceptance.md change is no longer classified blocking — the un-approved scenario edit is exactly what the acceptance lock gates on (spec FR6 clause (b): "an unlogged change is blocking"; a deliberate change updates the reviewer prompt and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$fp"
+      bad=1
+    }
+  fi
+  # The human-facing command — surfaces the section in the presented report.
+  if [[ ! -f "$root/$rp" ]]; then
+    printf 'acceptance-review drift: %s is missing — the report section cannot be surfaced to the human (spec FR6; a deliberate command rename updates the file and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$rp"
+    bad=1
+  else
+    grep -qF 'Acceptance scenario compliance' "$root/$rp" || {
+      printf 'acceptance-review drift: %s — the "Acceptance scenario compliance" section is not surfaced in /review-phase — acceptance findings must reach the human presentation, not hide inside the raw report; the section name is matched against the reviewer prompt verbatim, so a deliberate rename updates prompt, command, and this check in scripts/doctor.sh in the same commit, with a reason\n' "$rp"
+      bad=1
+    }
+  fi
+  return "$bad"
+}
+
 register_check check_role_table_permissions
 register_check check_no_fill_in_placeholders
 register_check check_no_git_add_all
@@ -747,6 +820,7 @@ register_check check_watcher_ignore_entries
 register_check check_invariant_markers
 register_check check_tag_vocabulary_consistency
 register_check check_mode_gate_contract
+register_check check_acceptance_review_contract
 
 # ---------------------------------------------------------------------------
 # Simulation stage (Task 3.4 — spec FR4): pure-git worktree-flow simulation

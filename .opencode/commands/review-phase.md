@@ -8,6 +8,7 @@ Follow the `phase-lifecycle` skill for the mechanical procedures below — this 
 
 Steps:
 1. Delegate to `phase-reviewer`: review Phase $1 changes (it reads `docs/$2/phase-branches.md` for the correct diff baseline itself), check testing compliance, and classify all issues as blocking or non-blocking.
+   Ensure its report carries the **Acceptance scenario compliance** section — per-scenario green evidence or an explicit uncovered flag, plus the `acceptance.md` diff lock (an unlogged scenario change is blocking; "n/a — no acceptance.md for this slug" when the file is absent).
 
 2. Present the full report to me — testing compliance, blocking issues, non-blocking findings, risks, and suggested doc edits.
 
