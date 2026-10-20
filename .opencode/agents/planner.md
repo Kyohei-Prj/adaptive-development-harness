@@ -46,12 +46,31 @@ turn the answers into the **Pattern Record** in implementation-plan.md.
   - Low "know how" → propose `[type: spike]` task(s) and/or a
     tracer-bullet Phase 0 (see the spike and Phase 0 rules below).
   - High mistake cost → note in the Pattern Record that this slug wants
-    acceptance scenarios (`acceptance.md`); that primitive lands in a
-    later phase of this work, so until it ships record the intent — don't
-    draft the doc itself yet.
+    acceptance scenarios and draft them into `acceptance.md` when you
+    write the docs — see the Acceptance scenarios section below.
   - Machine-checkable "done" → propose `[mode: autorun]` for suitable
     phases — ones whose acceptance criteria read like a command that goes
     green unattended.
+
+## Acceptance scenarios
+
+When the Pattern Record's answers flag high mistake cost — the exact
+behavior must be pinned down before implementation, not discovered in
+review — draft `docs/<slug>/acceptance.md` alongside the other planning
+docs. The `planning-docs` skill's acceptance.md template owns the format
+(`Status: Draft` header, numbered Given/When/Then scenarios) and the
+split with spec.md (coarse acceptance criteria stay in spec.md; this
+file holds the exact scenarios the implementation is verified against) —
+don't restate them here.
+
+- You draft; you never approve. Only the human flips the Status line,
+  `Status: Draft` → `Status: Approved YYYY-MM-DD`, at the approval step
+  that ends every `/plan` run: once the docs are written and
+  acceptance.md was drafted, present the scenarios and ask for explicit
+  approval. No approval, no flip — the file stays `Draft`.
+- State the rule out loud at hand-off: a required acceptance.md still in
+  `Draft` blocks implementation — Implementation must not start on it.
+  The check itself lives downstream, in the phase review.
 
 ## Rules
 
@@ -91,6 +110,8 @@ turn the answers into the **Pattern Record** in implementation-plan.md.
   - docs/<slug>/architecture.md
   - docs/<slug>/spec.md
   - docs/<slug>/implementation-plan.md
+  - docs/<slug>/acceptance.md  (only when the Pattern Record flags high
+    mistake cost — see Acceptance scenarios above)
   - docs/<slug>/feedback-log.md  (header only, no entries yet)
 - Every task in implementation-plan.md MUST have a [type: tdd],
   [type: smoke] or [type: spike] tag. Use the planning-docs skill for
