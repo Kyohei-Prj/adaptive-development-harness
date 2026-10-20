@@ -9,7 +9,7 @@ Follow the `phase-lifecycle` skill for the mechanical procedures below — this 
 Steps:
 1. Read docs/$1/implementation-plan.md and identify all phases in order.
 
-Repeat steps 2–10 for EACH phase N (in ascending order):
+Repeat steps 2–12 for EACH phase N (in ascending order):
 
 2. Mode gate — before touching git for phase N, read its `[mode: …]` tag from the `## Phase N — …` heading area (on the heading line or immediately under it) in docs/$1/implementation-plan.md; tag semantics: the `planning-docs` skill, "Phase mode tags". `[mode: sdd]`, `[mode: autorun]`, or an absent tag (= `[mode: sdd]`, backward compatible — proceed exactly as today) → this phase continues with the steps below unchanged. `[mode: interactive]` → stop the whole run at this phase: do not run phase branch setup, do not delegate, do not commit, and do not skip ahead to later phases silently — the run halts at the blocking phase and its trailer names it. The gate sits before step 3 on purpose: a refusal mutates no git state (no phase branch, no `phase-branches.md` row, no worktree) and leaves nothing to commit. End the response with the refusal explanation (this phase belongs to the human pair loop at `/interactive`, which lands in a later phase of this workflow-patterns work — until it ships, the refusal stands on its own and the pointer is forward-looking) and exactly this trailer line: `AUTORUN_STATUS: NEEDS_HUMAN: phase N is [mode: interactive]`.
 
