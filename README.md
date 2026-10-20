@@ -202,7 +202,7 @@ The planner expects a prior grill summary as input — it transcribes an already
 
 - `architecture.md` — components, data model, data flow, key decisions
 - `spec.md` — functional and non-functional requirements, acceptance criteria, in/out of scope
-- `implementation-plan.md` — phased task list structured as **vertical slices** (each phase crosses every layer to deliver one thin, reviewable, end-to-end piece of behavior — not "all schema, then all API, then all UI"), each task tagged `[type: tdd]` or `[type: smoke]`
+- `implementation-plan.md` — phased task list structured as **vertical slices** (each phase crosses every layer to deliver one thin, reviewable, end-to-end piece of behavior — not "all schema, then all API, then all UI"), each task tagged `[type: tdd]`, `[type: smoke]`, or `[type: spike]`
 - `feedback-log.md` — empty log, ready to receive entries during Feedback
 
 Keep the initial `/plan` argument to a headline (one line). Elaborate through the planner's follow-up questions.
@@ -440,6 +440,18 @@ Implement → run one minimal smoke check → commit
 The smoke check can be as simple as a Python import, a `curl` healthcheck, or a file existence test. Its purpose is to confirm the scaffolding didn't break the build, not to exercise logic.
 
 Use for: project scaffolding, directory structure, config files, dependency installs, DB migrations, static assets, environment wiring.
+
+### `[type: spike]`
+
+For time-boxed investigation of an open question — feasibility, unknown tech, risky design calls — producing a durable finding rather than shipped code.
+
+```
+Investigate in .scratch/ → record the finding → commit the entry
+```
+
+A `[type: spike]` task carries `(question: ..., exit: ...)` instead of `(acceptance: ...)`; throwaway code stays in `.scratch/`. The deliverable is a dated entry in `docs/<slug>/findings.md` — question, approach, answer, decision — appended and committed by the spike's `task-implementer` as its end-of-task step. If the exit criterion can't be met inside the time-box, the implementer reports `INCONCLUSIVE`, not `FAIL` — an inconclusive spike is a valid outcome, not a failure.
+
+Use for: feasibility checks, probes into unfamiliar technology, risky design calls that a later task's approach depends on.
 
 ### Stacking tags
 
