@@ -9,7 +9,7 @@ This command is meant to be invoked non-interactively (`opencode run --agent lea
 Follow the `phase-lifecycle` skill for the mechanical procedures below (parts C, D).
 
 Steps:
-1. Delegate to `phase-reviewer` to review Phase $1's changes (it reads `docs/$2/phase-branches.md` for the correct diff baseline itself), check testing compliance, and classify all issues as blocking or non-blocking.
+1. Delegate to `phase-reviewer` to review Phase $1's changes (it reads `docs/$2/phase-branches.md` for the correct diff baseline itself), check testing compliance, and classify all issues as blocking or non-blocking, passing it any non-`n/a` `Acceptance concerns:` lines from this phase's task summaries if you have them (you usually won't — this is a fresh process per phase — so those lines also live in the task commit-message bodies, which it reads itself).
 2. Resolve ALL blocking and non-blocking issues — issue-resolution delegation, see `phase-lifecycle` skill, part C.
 3. Delegate to `doc-updater` to apply all suggested doc edits and append a dated entry to feedback-log.md covering: the original findings, any deferred issues (an issue skipped per the exception below, or otherwise, is deferred — not dropped), risks for future phases, and all resolutions applied.
 4. If everything above succeeded: stage and commit the doc changes: `git add docs/$2/ && git commit -m "review($2): phase $1 fixes and doc updates"`. Then produce the final report (see format below) with status `OK`.

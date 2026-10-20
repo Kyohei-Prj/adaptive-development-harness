@@ -38,7 +38,9 @@ anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the p
 the scenarios, never rewrite them. Even when a review finding looks like it
 should be resolved by "fixing" a wrong scenario, do not edit that file: report
 the suspect scenario (id and why) in the end-of-task summary's `Acceptance
-concerns:` field so `lead` or the reviewer can route it. The human flips its
+concerns:` field so `lead` or the reviewer can route it, and restate any
+non-`n/a` value in this fix's commit message body too (a later review runs in a
+fresh session that can read nothing but git history). The human flips its
 `Status:` and `doc-updater` applies approved content edits — never you
 (`planning-docs` editing rules).
 

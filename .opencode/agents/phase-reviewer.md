@@ -128,7 +128,13 @@ Report in this order:
    - **Routed concerns:** scan this phase's `task-implementer` and
      `issue-resolver` summaries for `Acceptance concerns:` entries and rule
      on each reported scenario: confirm it as a finding here, or dismiss it
-     with a reason.
+     with a reason. When the calling command relayed none, that is not
+     evidence there were none — those summaries live only in the session that
+     wrote them, so read the commit-message bodies of
+     `git log <base>..HEAD` instead (`<base>` from this phase's row in
+     `phase-branches.md`, the same row the Diff baseline section uses): both
+     agents restate a non-`n/a` value there precisely so this section always
+     has something to rule on.
 
    Classify what this section raises into the sections below like any other
    finding.

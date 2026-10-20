@@ -39,8 +39,11 @@ scenarios are the human-approved acceptance lock. Never edit that file, not
 even to "fix" a scenario you believe is wrong; a suspect scenario is reported,
 never patched. If one looks wrong, record it (scenario id and why) in the
 end-of-task summary's `Acceptance concerns:` field so `lead` or the reviewer
-can route it — the human flips its `Status:` and `doc-updater` applies
-approved content edits, never you (`planning-docs` editing rules).
+can route it, and restate any non-`n/a` value in that task's commit message
+body too (the review runs in a separate session that can read nothing but git
+history, so the summary alone would never reach it) — the human flips its
+`Status:` and `doc-updater` applies approved content edits, never you
+(`planning-docs` editing rules).
 
 You will receive: a task description, acceptance criteria, relevant
 file/architecture pointers, and a `[type: tdd]`, `[type: smoke]` or
