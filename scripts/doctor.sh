@@ -610,7 +610,7 @@ check_tag_vocabulary_consistency() {
   # (there is no `[pattern: …]` tagged form for the id parser above to see);
   # asserting the section's SHAPE is out of this check's minimal scope.
   grep -qF '## Pattern Record' "$root/.opencode/skills/planning-docs/SKILL.md" || {
-    printf 'pattern-record drift: .opencode/skills/planning-docs/SKILL.md (source of truth) no longer carries the "## Pattern Record" heading the template both consumers point at (a deliberate rename updates template, consumers, and this check in the same commit, with a reason)\n'
+    printf 'pattern-record drift: .opencode/skills/planning-docs/SKILL.md (source of truth) no longer carries the "## Pattern Record" heading both consumers point at (a deliberate rename updates template, consumers, and this check in the same commit, with a reason)\n'
     bad=1
   }
   for rel in .opencode/agents/planner.md .opencode/commands/plan.md; do
