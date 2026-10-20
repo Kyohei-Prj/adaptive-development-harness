@@ -622,6 +622,120 @@ check_tag_vocabulary_consistency() {
   return "$bad"
 }
 
+# CHECK 11 — mode-gate contract (docs/workflow-patterns spec FR4; the Task 2.3
+# review's durability fix). Task 2.3's red→green evidence — 22 grep
+# assertions over the three implement commands — lived only in gitignored
+# .scratch/ and vanished with it, leaving FR4 with no durable regression
+# check: a later edit could delete the Mode gate while doctor stayed green.
+# This is the static port of that contract, one-for-one per assertion: each
+# command carries a Mode gate step that precedes its "Phase branch setup"
+# step (a refusal must mutate no git state), reads the phase's `[mode: …]`
+# tag from implementation-plan.md, states the [mode: sdd] /
+# [mode: autorun] / absent-tag-=-sdd proceed paths, and states that the
+# refusal commits nothing; implement-phase.md additionally refuses
+# [mode: interactive] with a forward-looking /interactive pointer; both
+# headless commands carry the exact trailer line
+# `AUTORUN_STATUS: NEEDS_HUMAN: phase … is [mode: interactive]` (parsed by
+# scripts/autorun.sh, formatted per phase-lifecycle part D); autorun.md
+# additionally forbids silently skipping ahead past the blocking phase.
+# Non-static scratch assertions: none — all 22 were text/structure greps
+# over these tracked files, so all 22 are ported.
+#
+# Golden-presence contract over prose, as in check_invariant_markers: the
+# gate step may legitimately be reworded, but a deliberate change updates
+# the step and this check in the same commit, with a reason. When a file
+# has no gate paragraph at all, one precise line fires and that file's
+# window assertions are skipped — they would only echo it (the scratch
+# harness counted every failing assertion independently; detection
+# equivalence is kept: any drift that reds one of the 22 reds this).
+#
+# Test seam (same spirit as check_tag_vocabulary_consistency): an optional
+# first argument overrides $REPO_ROOT, so a throwaway harness drives this
+# check against scratch fixture trees without touching tracked files.
+check_mode_gate_contract() {
+  local root="${1:-$REPO_ROOT}" bad=0 f n g b gate gate14 why=''
+  local -a cmds=(
+    .opencode/commands/implement-phase.md
+    .opencode/commands/implement-phase-auto.md
+    .opencode/commands/autorun.md
+  )
+  for f in "${cmds[@]}"; do
+    n="${f##*/}"
+    if [[ ! -f "$root/$f" ]]; then
+      printf 'mode-gate drift: %s is missing — its [mode: …] gate cannot be checked (spec FR4; a deliberate command rename updates the file, the gate, and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$f"
+      bad=1
+      continue
+    fi
+    # Ordering: the gate step exists AND sits strictly before the numbered
+    # "Phase branch setup" step — the refusal must precede any git
+    # mutation (no phase branch, no phase-branches.md row, no worktree).
+    g=$(grep -n -m1 -i 'Mode gate' "$root/$f" | cut -d: -f1) || true
+    b=$(grep -n -m1 -E '^[0-9]+\. Phase branch setup' "$root/$f" | cut -d: -f1) || true
+    if [[ -z "$g" ]]; then
+      why="no 'Mode gate' step found"
+    elif [[ -z "$b" ]]; then
+      why="no numbered 'Phase branch setup' step found — the step the gate must precede"
+    elif (( g >= b )); then
+      why="the gate (line $g) does not precede 'Phase branch setup' (line $b)"
+    else
+      why=''
+    fi
+    [[ -z "$why" ]] || {
+      printf 'mode-gate drift: %s — %s — the gate must sit before phase branch setup so a [mode: interactive] refusal mutates no git state (spec FR4; a deliberate change to the gate updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n" "$why"
+      bad=1
+    }
+    [[ -n "$g" ]] || continue  # whole gate paragraph missing — reported above
+    # Gate-body assertions over the step window (the scratch harness's
+    # -A12/-A14 windows around every 'Mode gate' occurrence).
+    gate=$(grep -A12 -i 'Mode gate' "$root/$f") || true
+    grep -qF -- 'implementation-plan.md' <<<"$gate" || {
+      printf 'mode-gate drift: %s — the Mode gate step never names implementation-plan.md — it must read the phase [mode: …] tag from docs/<slug>/implementation-plan.md (spec FR4; a deliberate change to where the tag lives updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+      bad=1
+    }
+    grep -qE '\[mode: sdd\]' <<<"$gate" || {
+      printf 'mode-gate drift: %s — the Mode gate step does not state the [mode: sdd] proceed path (spec FR4; a deliberate vocabulary change updates the step, the planning-docs mode vocabulary, and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+      bad=1
+    }
+    grep -Eqi 'absent|no tag' <<<"$gate" || {
+      printf 'mode-gate drift: %s — the Mode gate step does not state that an absent tag means [mode: sdd] — backward compatibility with pre-mode plans (spec FR4; a deliberate change updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+      bad=1
+    }
+    grep -Eqi 'no commit|not.*commit|without commit|do NOT commit|nothing .* commit' <<<"$gate" || {
+      printf 'mode-gate drift: %s — the Mode gate step does not state that the refusal commits nothing — the refusal is read-only: no phase branch, no phase-branches.md row, no commit (spec FR4; a deliberate change updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+      bad=1
+    }
+    if [[ "$n" == "implement-phase.md" ]]; then
+      # interactive entry point: refusal + forward-looking /interactive pointer
+      gate14=$(grep -A14 -i 'Mode gate' "$root/$f") || true
+      grep -Eqi 'refus' <<<"$gate14" || {
+        printf 'mode-gate drift: implement-phase.md — the Mode gate step contains no refusal of [mode: interactive] — the interactive command must stop and not delegate (spec FR4; a deliberate change to the refusal updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n'
+        bad=1
+      }
+      grep -qF -- '/interactive' <<<"$gate14" || {
+        printf 'mode-gate drift: implement-phase.md — the Mode gate step no longer points at /interactive — the refusal must name the interactive entry point to run instead (spec FR4; a deliberate rename updates the step, the command, and this check in scripts/doctor.sh in the same commit, with a reason)\n'
+        bad=1
+      }
+    else
+      # headless commands: exact NEEDS_HUMAN trailer + [mode: autorun] proceed
+      grep -Eq 'AUTORUN_STATUS: NEEDS_HUMAN: phase (N|\$1|<n>) is \[mode: interactive\]' "$root/$f" || {
+        printf 'mode-gate drift: %s — missing the exact trailer line AUTORUN_STATUS: NEEDS_HUMAN: phase <n> is [mode: interactive] — the surrounding flow parses this trailer to detect the gate stop (spec FR4; a deliberate trailer-format change updates the step, scripts/autorun.sh and phase-lifecycle part D, and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+        bad=1
+      }
+      grep -qE '\[mode: autorun\]' <<<"$gate" || {
+        printf 'mode-gate drift: %s — the Mode gate step does not state the [mode: autorun] proceed path (spec FR4; a deliberate vocabulary change updates the step, the planning-docs mode vocabulary, and this check in scripts/doctor.sh in the same commit, with a reason)\n' "$n"
+        bad=1
+      }
+      if [[ "$n" == "autorun.md" ]]; then
+        grep -Eqi 'not skip ahead' <<<"$gate" || {
+          printf 'mode-gate drift: autorun.md — the Mode gate step does not forbid skipping ahead — the multi-phase run must halt at the blocking phase, not silently continue with later phases (spec FR4; a deliberate change updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n'
+          bad=1
+        }
+      fi
+    fi
+  done
+  return "$bad"
+}
+
 register_check check_role_table_permissions
 register_check check_no_fill_in_placeholders
 register_check check_no_git_add_all
@@ -632,6 +746,7 @@ register_check check_agents_md_line_limit
 register_check check_watcher_ignore_entries
 register_check check_invariant_markers
 register_check check_tag_vocabulary_consistency
+register_check check_mode_gate_contract
 
 # ---------------------------------------------------------------------------
 # Simulation stage (Task 3.4 — spec FR4): pure-git worktree-flow simulation
