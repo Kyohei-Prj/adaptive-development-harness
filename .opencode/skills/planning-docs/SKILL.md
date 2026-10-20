@@ -6,6 +6,7 @@ description: Templates and conventions for the architecture, spec, implementatio
 docs/<slug>/architecture.md
 docs/<slug>/spec.md
 docs/<slug>/implementation-plan.md
+docs/<slug>/acceptance.md       (only when the Pattern Record flags high mistake cost — see below)
 docs/<slug>/feedback-log.md
 docs/<slug>/phase-branches.md   (created by `lead`, not `planner` — see below)
 docs/<slug>/findings.md         (appended by the spike's `task-implementer`, not `planner` — see below)
@@ -61,6 +62,12 @@ refusal stands on its own and the pointer is forward-looking.
 - During Feedback, make targeted edits — never regenerate a doc from scratch.
 - Always append a dated entry to feedback-log.md when architecture/spec/plan
   changes as a result of phase feedback.
+- acceptance.md `Status:` flips `Draft` → `Approved YYYY-MM-DD` only at the
+  human's `/plan` approval step — no agent edits that line.
+- `doc-updater` may edit acceptance.md scenario content only when the user
+  explicitly approved the change, and logs it in feedback-log.md.
+- Implement-facing agents (`task-implementer`, `issue-resolver`) treat
+  acceptance.md as read-only.
 
 ## Templates
 
@@ -172,6 +179,28 @@ tag and why the answers above chose it:
 
 ## Dependencies between phases
 Note anything that must complete before later phases can start.
+```
+
+---
+
+### acceptance.md
+```markdown
+# Acceptance — <slug>
+
+<!-- Conditional: planner drafts this only when the Pattern Record flags high
+     mistake cost — skip it otherwise. Coarse acceptance criteria stay in
+     spec.md; this file holds the exact Given/When/Then scenarios the
+     implementation is verified against. Only the human flips the Status
+     line, `Status: Draft` → `Status: Approved YYYY-MM-DD`, at the `/plan`
+     approval step; implementation must not start on a file this plan
+     expects approved. -->
+
+Status: Draft
+
+## Scenarios
+
+1. **Given** ... **When** ... **Then** ...
+2. **Given** ... **When** ... **Then** ...
 ```
 
 ---
