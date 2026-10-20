@@ -465,6 +465,18 @@ Tags compose:
 
 If a task has no type tag, `task-implementer` classifies it using the same heuristics (TDD when in doubt). However, explicit tags at planning time are more reliable than runtime inference — the planner should never leave a task untagged.
 
+### Mode tags
+
+Phases — not tasks — carry `[mode: …]` tags, written on the `## Phase N — <name>` heading line. A mode says *who* implements the phase; it is orthogonal to the task-level `[type: …]` vocabulary.
+
+```
+- `[mode: sdd]` → delegated `task-implementer` subagents — the default SDD flow
+- `[mode: interactive]` → a human pair loop (`/interactive`)
+- `[mode: autorun]` → the unattended run (`/autorun`, `scripts/autorun.sh`)
+```
+
+**An absent tag means `[mode: sdd]`** — every plan written before mode tags existed keeps running unchanged. The gate on the automation side: `/implement-phase*` given a `[mode: interactive]` phase refuse to delegate and point to `/interactive`, and a headless run halts at that phase with a `NEEDS_HUMAN` status trailer rather than skipping ahead silently. The vocabulary's source of truth is the `planning-docs` skill ("Phase mode tags").
+
 ---
 
 ## Document Templates

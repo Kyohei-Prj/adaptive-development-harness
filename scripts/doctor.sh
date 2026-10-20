@@ -531,9 +531,10 @@ check_invariant_markers() {
 # template placeholder `[type: ...]` is NOT an id. Ids are detected over the
 # `[a-z|-]` character class (lowercase letters, `|`, `-`) — the shape the
 # vocabulary actually uses — so a lost golden id drops out of the parse and
-# goes red as "missing", loudly; but an off-vocabulary id using some OTHER
-# character also drops out and slips past the extra direction silently (same
-# parser philosophy, and same caveat, as CHECK 1).
+# goes red as "missing", loudly; but an off-vocabulary id using characters
+# OUTSIDE that class — digits or uppercase, e.g. `[type: tdd2]` or
+# `[mode: AUTOS]` — never enters the parse at all and slips past the extra
+# direction silently (same parser philosophy, and same caveat, as CHECK 1).
 #
 # Comparison is file-vs-golden, not pairwise-file-to-file, so every FAIL
 # names exactly one file and one id, and drift is caught in EITHER
@@ -541,13 +542,16 @@ check_invariant_markers() {
 # outside the vocabulary — an undeclared fifth tag appearing in the source
 # of truth goes red exactly like a consumer that stopped knowing one.
 #
-# PHASE 2 EXTENSION POINT (workflow-patterns Task 2.4, mode vocabulary):
-# add a second entry to the array below —
-#   'mode|sdd interactive autorun|.opencode/skills/planning-docs/SKILL.md …'
-# — the moment Task 2.1 has landed `[mode: …]` in the source of truth. The
-# mode dimension is deliberately ABSENT here, not present-and-enforced:
-# this phase's tree is legitimately mode-free, so enforcing it now would
-# fail a tree that is correct for Phase 1.
+# THE MODE DIMENSION (workflow-patterns Task 2.4) carries the phase-level
+# `[mode: …]` vocabulary — golden `sdd interactive autorun`, source of truth
+# the planning-docs skill, consumers planner.md and plan.md. Note what is
+# deliberately NOT in the mode set: task-implementer.md stays a `type`-only
+# carrier — modes are phase-level and it has no `[mode: …]` refs, so demanding
+# them there would enforce a vocabulary that file is never meant to know.
+# README.md carries BOTH dimensions: its prose is vocabulary-complete for each
+# (type since the Phase 1 drift fix, mode since the README "Mode tags"
+# subsection), so the golden list catches README prose drift like any other
+# carrier's.
 #
 # Test seam (same spirit as DOCTOR_EXTRA_CHECKS, see header): an optional
 # first argument overrides $REPO_ROOT, so a throwaway harness drives this
@@ -556,7 +560,8 @@ check_tag_vocabulary_consistency() {
   local root="${1:-$REPO_ROOT}" bad=0
   local entry dim ids files src rel file have missing extra id role
   local -a vocab=(
-    'type|tdd smoke spike|.opencode/skills/planning-docs/SKILL.md .opencode/agents/planner.md .opencode/commands/plan.md .opencode/agents/task-implementer.md'
+    'type|tdd smoke spike|.opencode/skills/planning-docs/SKILL.md .opencode/agents/planner.md .opencode/commands/plan.md .opencode/agents/task-implementer.md README.md'
+    'mode|sdd interactive autorun|.opencode/skills/planning-docs/SKILL.md .opencode/agents/planner.md .opencode/commands/plan.md README.md'
   )
   for entry in "${vocab[@]}"; do
     IFS='|' read -r dim ids files <<<"$entry"
@@ -596,6 +601,23 @@ check_tag_vocabulary_consistency() {
         bad=1
       done
     done
+  done
+  # Pattern Record heading — the same golden-list story as the vocab array:
+  # the planning-docs template ships the `## Pattern Record` section the
+  # planner's pattern-selection step fills in, and planner.md / plan.md
+  # reference it by name. Presence-only on both sides: the template carries
+  # the literal heading, the consumers mention the section name in prose
+  # (there is no `[pattern: …]` tagged form for the id parser above to see);
+  # asserting the section's SHAPE is out of this check's minimal scope.
+  grep -qF '## Pattern Record' "$root/.opencode/skills/planning-docs/SKILL.md" || {
+    printf 'pattern-record drift: .opencode/skills/planning-docs/SKILL.md (source of truth) no longer carries the "## Pattern Record" heading the template both consumers point at (a deliberate rename updates template, consumers, and this check in the same commit, with a reason)\n'
+    bad=1
+  }
+  for rel in .opencode/agents/planner.md .opencode/commands/plan.md; do
+    grep -qF 'Pattern Record' "$root/$rel" || {
+      printf 'pattern-record drift: %s (consumer) no longer references the Pattern Record — the pattern-selection step must point at the "## Pattern Record" template section in .opencode/skills/planning-docs/SKILL.md (a deliberate rename updates template, consumers, and this check in the same commit, with a reason)\n' "$rel"
+      bad=1
+    }
   done
   return "$bad"
 }
