@@ -1,6 +1,6 @@
 # Workflow: Grill → Plan → Implement → Feedback
 
-4-stage AI-driven workflow on top of OpenCode. This file is navigation only — full prose lives in README.md (sections cited inline). All planning docs for a unit of work live under `docs/<slug>/`; templates and `[type: tdd]`/`[type: smoke]` tag rules: the `planning-docs` skill.
+4-stage AI-driven workflow on top of OpenCode. This file is navigation only — full prose lives in README.md (sections cited inline). All planning docs for a unit of work live under `docs/<slug>/`; templates and `[type: …]` task-type tag rules: the `planning-docs` skill.
 
 ## Stages
 
