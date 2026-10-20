@@ -10,7 +10,7 @@ Steps:
 1. Delegate to `phase-reviewer`: review Phase $1 changes (it reads `docs/$2/phase-branches.md` for the correct diff baseline itself), check testing compliance, and classify all issues as blocking or non-blocking.
    Ensure its report carries the **Acceptance scenario compliance** section — per-scenario green evidence or an explicit uncovered flag, plus the `acceptance.md` diff lock (an unlogged scenario change is blocking; "n/a — no acceptance.md for this slug" when the file is absent).
 
-2. Present the full report to me — testing compliance, blocking issues, non-blocking findings, risks, and suggested doc edits.
+2. Present the full report to me — testing compliance, acceptance scenario compliance, blocking issues, non-blocking findings, risks, and suggested doc edits.
 
 3. If there are any blocking or non-blocking issues:
    a. Ask me to confirm which issues to resolve now vs defer.
