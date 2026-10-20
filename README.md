@@ -475,7 +475,7 @@ Phases — not tasks — carry `[mode: …]` tags, written on the `## Phase N �
 - `[mode: autorun]` → the unattended run (`/autorun`, `scripts/autorun.sh`)
 ```
 
-**An absent tag means `[mode: sdd]`** — every plan written before mode tags existed keeps running unchanged. The gate on the automation side: `/implement-phase*` given a `[mode: interactive]` phase refuse to delegate and point to `/interactive`, and a headless run halts at that phase with a `NEEDS_HUMAN` status trailer rather than skipping ahead silently. The vocabulary's source of truth is the `planning-docs` skill ("Phase mode tags").
+**An absent tag means `[mode: sdd]`** — every plan written before mode tags existed keeps running unchanged. The gate on the automation side: `/implement-phase*` given a `[mode: interactive]` phase refuse to delegate and point to `/interactive`, and a headless run halts at that phase with a `NEEDS_HUMAN` status trailer rather than skipping ahead silently. The vocabulary's source of truth is the `planning-docs` skill ("Phase mode tags"). The Pattern Record's four answers fix these tags — and one of them, mistake cost, has a consequence outside the mode vocabulary: a high answer makes the planner draft exact acceptance scenarios in [`acceptance.md`](#document-templates).
 
 ---
 
@@ -488,6 +488,8 @@ All templates are embedded in `.opencode/skills/planning-docs/SKILL.md` and are 
 **`spec.md`** — Goal · In scope / Out of scope · Functional requirements · Non-functional requirements · Acceptance criteria · Constraints & assumptions
 
 **`implementation-plan.md`** — One section per phase, each with a goal and a task list. Every task: `- [ ] Task N.M: <description> (acceptance: <criteria>) [type: tdd|smoke|spike]`; a `[type: spike]` task replaces `(acceptance: <criteria>)` with `(question: ..., exit: ...)`.
+
+**`acceptance.md`** — Conditional: only for slugs whose Pattern Record flags high mistake cost. Numbered Given/When/Then scenarios the implementation is verified against — coarse acceptance criteria stay in `spec.md`. Header carries `Status: Draft` → `Status: Approved YYYY-MM-DD`, flipped only by the human at the `/plan` approval step.
 
 **`feedback-log.md`** — Append-only. One dated entry per reviewed phase: issues found, deferred issues, risks for future phases, doc changes applied.
 
