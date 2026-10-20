@@ -19,5 +19,6 @@ Steps:
    - docs/<slug>/spec.md
    - docs/<slug>/implementation-plan.md — phases structured as **vertical slices** (each phase crosses every layer needed for one thin, reviewable, end-to-end piece of behavior), not horizontal layers
    - docs/<slug>/feedback-log.md (header only, no entries yet)
-4. Every task in implementation-plan.md MUST have a [type: tdd] or [type: smoke] tag. Use the planning-docs skill for classification rules.
-5. Do not write any application code in this stage.
+4. Propose an optional tracer-bullet Phase 0 for greenfield or architecture-unproven work, and `[type: spike]` tasks for open technical questions that could invalidate the plan; skip Phase 0 explicitly for brownfield or small slugs — see the planner's Phase 0 / spike rules and the `vertical-slicing` skill.
+5. Every task in implementation-plan.md MUST have a [type: tdd], [type: smoke] or [type: spike] tag. Use the planning-docs skill for classification rules.
+6. Do not write any application code in this stage.

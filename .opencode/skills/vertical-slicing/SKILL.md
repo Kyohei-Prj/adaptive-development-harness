@@ -17,6 +17,26 @@ feature touches — schema, service, API, UI — to deliver one thin but
 *complete* piece of real behavior. After the phase ships, there should be
 something a human can actually exercise (click, curl, run) end to end.
 
+## Tracer bullets and Phase 0
+
+A **tracer bullet** is the thinnest real end-to-end slice through the
+riskiest boundaries, using real dependencies rather than mocks — mocks
+hide exactly the boundaries you need to prove. Every vertical slice
+above is one; the question is only whether the first slice deserves its
+own phase.
+
+- **Warrants a dedicated, optional Phase 0:** greenfield slugs, or any
+  slug whose architecture is still unproven. Phase 0's only job is to
+  prove the spine works end to end — no scope beyond that.
+- **Skips Phase 0:** brownfield or small slugs. Skip it and say so
+  explicitly in the plan, so the omission is a decision, not an
+  oversight — Phase 1 itself is the tracer bullet.
+- **Spike vs. tracer bullet:** a spike is thrown away; a tracer bullet
+  is kept and grown. A spike is a time-boxed investigation of one open
+  question whose deliverable is a `findings.md` entry, with throwaway
+  code confined to `.scratch/`. If the code was meant to be discarded,
+  it was a spike, not a Phase 0.
+
 ## Test for a phase
 
 Ask: "After this phase merges, can someone outside the team see or use

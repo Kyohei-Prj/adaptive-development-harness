@@ -39,6 +39,19 @@ tends to produce a better-aligned plan." Don't refuse; just flag it.
   explicitly in each phase's Goal line — this is a deliberate steering cue,
   not decoration. Use the `vertical-slicing` skill for the full slicing
   guidance and worked examples.
+- Propose an optional **Phase 0 — tracer bullet** when the slug is
+  greenfield or its architecture is unproven: the thinnest real,
+  end-to-end slice through the riskiest boundaries — real dependencies,
+  no mocks, no scope beyond proving the spine works. For a brownfield
+  or small slug, skip Phase 0 and say so explicitly in the plan, so the
+  omission is a decision, not an oversight — Phase 1 itself is then the
+  tracer bullet.
+- When open technical questions could invalidate the plan — an
+  unfamiliar library, an unproven integration, a risky design call
+  ("how" is uncertain) — propose `[type: spike]` task(s) early, before
+  the tasks that depend on the answer, each with `(question: ...,
+  exit: ...)`. Their findings land in docs/<slug>/findings.md; their
+  throwaway code stays in `.scratch/`.
 - Note blocking relationships between phases/tasks explicitly (which tasks
   must complete before others can start) so independent work can be tagged
   `[parallel-with: X]`.
@@ -48,8 +61,9 @@ tends to produce a better-aligned plan." Don't refuse; just flag it.
   - docs/<slug>/spec.md
   - docs/<slug>/implementation-plan.md
   - docs/<slug>/feedback-log.md  (header only, no entries yet)
-- Every task in implementation-plan.md MUST have a [type: tdd] or
-  [type: smoke] tag. Use the planning-docs skill for classification rules.
+- Every task in implementation-plan.md MUST have a [type: tdd],
+  [type: smoke] or [type: spike] tag. Use the planning-docs skill for
+  classification rules.
 - Do not write or modify application code in this stage.
 - These docs are a destination marker, not a novel — don't over-polish them
   and don't expect the user to proofread every line. Their job is to give
