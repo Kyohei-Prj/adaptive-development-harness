@@ -1,6 +1,6 @@
 ---
 name: planning-docs
-description: Templates and conventions for the architecture, spec, implementation-plan, and feedback-log docs, including task type tag rules for the TDD/Smoke testing system
+description: Templates and conventions for the architecture, spec, implementation-plan, feedback-log, and findings docs, including task type tag rules for the tdd/smoke/spike task types
 ---
 ## File locations
 docs/<slug>/architecture.md
@@ -8,6 +8,7 @@ docs/<slug>/spec.md
 docs/<slug>/implementation-plan.md
 docs/<slug>/feedback-log.md
 docs/<slug>/phase-branches.md   (created by `lead`, not `planner` — see below)
+docs/<slug>/findings.md         (appended by the spike's `task-implementer`, not `planner` — see below)
 
 `<slug>` = short kebab-case id agreed during Planning.
 
@@ -20,6 +21,10 @@ The `task-implementer` subagent uses it to choose its testing approach.
 |---|---|
 | `[type: tdd]` | Business logic, validation, algorithms, data transforms, domain rules, service layers, stateful or error-prone operations |
 | `[type: smoke]` | Scaffolding, boilerplate, config files, directory setup, dependency installs, DB migrations, static assets, simple wiring with no domain logic |
+| `[type: spike]` | Time-boxed investigation of an open question — feasibility, unknown tech, risky design calls — producing a durable finding; throwaway code stays in `.scratch/` |
+
+A `[type: spike]` task carries `(question: ..., exit: ...)` instead of
+`(acceptance: ...)`; its deliverable is a `findings.md` entry, not shipped code.
 
 **Defaulting:** when genuinely uncertain, use `[type: tdd]`.
 The implementer will also self-classify if the tag is absent, but an
@@ -99,6 +104,7 @@ What success looks like, in one or two sentences.
 - [ ] Task 1.1: ... (acceptance: ...) [type: tdd]
 - [ ] Task 1.2: ... (acceptance: ...) [type: smoke]
 - [ ] Task 1.3: ... (acceptance: ...) [type: tdd] [parallel-with: 1.2]
+- [ ] Task 1.4: ... (question: ..., exit: ...) [type: spike]
 
 ## Phase 2 — <name>
 **Goal:** ...
@@ -161,3 +167,22 @@ here instead.
 (`git branch --show-current` right before the checkout), never assumed
 from a naming pattern. This file is committed as part of each phase's
 commit, so it survives across sessions.
+
+---
+
+### findings.md
+
+Not written by `planner` — the spike's `task-implementer` appends one dated
+entry per `[type: spike]` task as its end-of-task step and commits it.
+Append-only: one entry per spike, prior entries never rewritten.
+
+# Findings — <slug>
+
+## YYYY-MM-DD — Task <n.m>
+**Question:** ...
+
+**Approach:** ...
+
+**Answer:** ...
+
+**Decision:** ...
