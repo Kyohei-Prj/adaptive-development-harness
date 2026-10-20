@@ -7,3 +7,4 @@ reads this for its diff baseline — never inferred from naming patterns.
 |---|---|---|
 | 1 | feature/workflow-patterns-phase-1 | feature/workflow-patterns |
 | 2 | feature/workflow-patterns-phase-2 | feature/workflow-patterns-phase-1 |
+| 3 | feature/workflow-patterns-phase-3 | feature/workflow-patterns-phase-2 |
