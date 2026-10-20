@@ -252,10 +252,11 @@ If a `task-implementer` reports **FAIL**, `lead` stops delegating the rest of th
 `phase-reviewer` reads `docs/<slug>/phase-branches.md` to find this phase's exact base branch — never inferred from naming conventions, always read from the record `lead` wrote during Implementation — finds the fork point (`git merge-base`), and diffs against that. It checks test results and reports in order:
 
 1. **Testing compliance** — did TDD tasks produce tests? Did smoke tasks run a check?
-2. **Blocking issues** — each with affected file(s) and a one-sentence reason it must be resolved before the next phase starts
-3. **Non-blocking findings** — tech debt, minor risks, improvements that don't prevent continuing
-4. **Risks for future phases** — architecture drift, scope creep, concerns about upcoming phases
-5. **Suggested doc edits** — concrete, targeted changes to the affected docs
+2. **Acceptance scenario compliance** — if the slug has an `acceptance.md`: green evidence per scenario plus the diff lock (an unlogged scenario change is blocking); "n/a — no acceptance.md for this slug" when it doesn't
+3. **Blocking issues** — each with affected file(s) and a one-sentence reason it must be resolved before the next phase starts
+4. **Non-blocking findings** — tech debt, minor risks, improvements that don't prevent continuing
+5. **Risks for future phases** — architecture drift, scope creep, concerns about upcoming phases
+6. **Suggested doc edits** — concrete, targeted changes to the affected docs
 
 `lead` presents the full report and asks you to confirm which blocking and non-blocking issues to resolve. For each confirmed issue, `issue-resolver` is delegated one at a time — sequentially, never in parallel — and reports back with the same summary format as `task-implementer`. If any fix reports FAIL, `lead` surfaces the root cause and waits for your direction before moving on. **"Risks for future phases" are never delegated to `issue-resolver`** — they're speculative concerns about work that hasn't happened yet, not bugs to fix. They're recorded in `feedback-log.md` instead.
 
@@ -614,6 +615,8 @@ Testing compliance:
   Task 1.1 [smoke] — smoke check present ✓
   Task 1.2 [tdd]   — 8 new tests, all passing ✓
   Task 1.3 [tdd]   — 12 new tests, all passing ✓
+
+Acceptance scenario compliance: n/a — no acceptance.md for this slug
 
 Blocking issues:
   - Issue: DELETE /todos/{id} returns 200 instead of 204
