@@ -109,11 +109,11 @@ register_check() { CHECKS+=("$1"); }
 #     deny — the exact silent-failure class this slug exists to catch —
 #     so the golden diff is order-sensitive by construction.
 #   * Per-agent reality, not a uniform shared-17 (feedback-log NB5): the
-#     5 map-form agents differ — architecture-reviewer and phase-reviewer
-#     carry 27 denies each, task-implementer and issue-resolver 21, and
-#     lead 25 denies + 2 scoped allows (`git merge task/*`,
+#     6 map-form agents differ — architecture-reviewer and phase-reviewer
+#     carry 27 denies each, task-implementer, issue-resolver and pair 21,
+#     and lead 25 denies + 2 scoped allows (`git merge task/*`,
 #     `git mv docs/* docs/_archive/*`).
-#   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 5 above)
+#   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 6 above)
 #     and whole-string `bash: deny` (doc-updater, planner, grill) — the
 #     latter golden exactly ONE "string deny" line per agent (wholesale
 #     bash deny; its resolved entry-diff would be semantically inert).
@@ -222,6 +222,29 @@ lead	deny	git mv *
 lead	allow	git mv docs/* docs/_archive/*
 lead	deny	git worktree remove --force*
 lead	deny	*worktree remove --force*
+pair	map	
+pair	allow	*
+pair	deny	git push --force*
+pair	deny	git push -f*
+pair	deny	git push origin +*
+pair	deny	rm -rf*
+pair	deny	rm -fr*
+pair	deny	git reset --hard*
+pair	deny	git checkout -- .*
+pair	deny	git checkout --force*
+pair	deny	git clean -f*
+pair	deny	git branch -D*
+pair	deny	*rm -rf*
+pair	deny	*rm -fr*
+pair	deny	*reset --hard*
+pair	deny	*checkout -- .*
+pair	deny	*checkout --force*
+pair	deny	*git clean -f*
+pair	deny	*push --force*
+pair	deny	*push -f *
+pair	deny	*branch -D*
+pair	deny	git worktree remove --force*
+pair	deny	*worktree remove --force*
 phase-reviewer	map	
 phase-reviewer	allow	*
 phase-reviewer	deny	git push --force*
