@@ -70,7 +70,7 @@ User idea
 │                                             │
 │  Phase by phase.                            │
 │  Each task → task-implementer subagent      │
-│  TDD path or Smoke path per task type tag.  │
+│  A path per task-type tag.                  │
 │                                             │
 │  Output: working code + passing tests       │
 └──────────────────┬──────────────────────────┘
@@ -86,7 +86,7 @@ User idea
 │  ┌─────────────────────────────────────┐    │
 │  │  For each confirmed blocking/       │    │
 │  │  non-blocking issue: issue-resolver │    │
-│  │  fixes it (TDD/Smoke). Risks for    │    │
+│  │  fixes it. Risks for                │    │
 │  │  future phases are logged, not      │    │
 │  │  fixed — they're speculative.       │    │
 │  └─────────────────────────────────────┘    │
@@ -108,7 +108,7 @@ User idea
 - **Context hygiene / smart zone** — the primary (lead) session never holds diffs; all content edits happen inside sub-agent child sessions (lead's own edits are the bookkeeping exception only: the `phase-branches.md` rows and `implementation-plan.md` checkbox flips), and the lead only receives task summaries. More generally, keep any single session under ~100K tokens of practical use — start fresh between Grill/Plan/Implement rather than letting one session run the whole feature. See [Tips & Conventions](#tips--conventions).
 - **Reviewer runs dumber-proof** — `phase-reviewer` always runs in a fresh subagent context (never appended to the implementer's session) and can be pinned to a stronger model than the implementer, so review reasoning isn't capped by whatever context state the implementer left behind.
 - **Push vs pull standards** — coding standards are pulled on demand by `task-implementer`/`issue-resolver` (loaded only if they're uncertain) but pushed inline into `phase-reviewer` (always enforced, since the reviewer is the one gate that must not skip them).
-- **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
+- **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]` / `[type: spike]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
 - **Mechanics live in one place** — phase-branch setup, worktree-isolated parallel execution, and issue-resolution delegation are the same underlying procedures whether triggered by `/implement-phase`, `/autorun`, or the headless `*-auto` commands. They're defined once in the `phase-lifecycle` skill and referenced everywhere, not copy-pasted per command — six near-identical copies is exactly the situation that lets one silently drift from the rest.
 - **Document-first, but not permanent** — architecture, spec, and implementation plan are the source of truth during a unit of work. They evolve via the Feedback stage, never silently — and once a slug's phases are all merged, consider archiving `docs/<slug>/` rather than leaving it live to go stale and mislead a future session.
 - **Minimal footprint, not minimal correctness** — 8 agent files, 10 command files, 4 skills, 2 scripts. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
@@ -475,7 +475,7 @@ All templates are embedded in `.opencode/skills/planning-docs/SKILL.md` and are 
 
 **`spec.md`** — Goal · In scope / Out of scope · Functional requirements · Non-functional requirements · Acceptance criteria · Constraints & assumptions
 
-**`implementation-plan.md`** — One section per phase, each with a goal and a task list. Every task: `- [ ] Task N.M: <description> (acceptance: <criteria>) [type: tdd|smoke]`
+**`implementation-plan.md`** — One section per phase, each with a goal and a task list. Every task: `- [ ] Task N.M: <description> (acceptance: <criteria>) [type: tdd|smoke|spike]`; a `[type: spike]` task replaces `(acceptance: <criteria>)` with `(question: ..., exit: ...)`.
 
 **`feedback-log.md`** — Append-only. One dated entry per reviewed phase: issues found, deferred issues, risks for future phases, doc changes applied.
 
