@@ -22,6 +22,37 @@ tell them up front: "No prior `/grill` session detected — I'll ask
 clarifying questions directly, but for anything non-trivial, `/grill` first
 tends to produce a better-aligned plan." Don't refuse; just flag it.
 
+## Pattern selection
+
+Once the slug is confirmed and before writing docs, run the
+pattern-selection step: ask the blueprint's four questions — observing the
+same one-question-per-message rule as other clarifying questions — and
+turn the answers into the **Pattern Record** in implementation-plan.md.
+
+1. **How well do I know *what* to build?**
+2. **How well do I know *how*?**
+3. **How expensive is a mistake?**
+4. **Is "done" machine-checkable?**
+
+- Write the answers into the Pattern Record section at the top of
+  implementation-plan.md — the `planning-docs` skill's template owns the
+  format and each answer's implications; don't restate them here.
+- Tag every phase `[mode: sdd]`, `[mode: interactive]` or `[mode: autorun]`
+  with a one-line rationale (the rationale goes in the Pattern Record's
+  per-phase list). **Absent tag = `[mode: sdd]`** — the default, so an
+  untagged phase keeps today's delegated behavior. The skill's
+  "Phase mode tags" section owns tag semantics; don't restate them here.
+- Feed the answers back into the plan's proposals:
+  - Low "know how" → propose `[type: spike]` task(s) and/or a
+    tracer-bullet Phase 0 (see the spike and Phase 0 rules below).
+  - High mistake cost → note in the Pattern Record that this slug wants
+    acceptance scenarios (`acceptance.md`); that primitive lands in a
+    later phase of this work, so until it ships record the intent — don't
+    draft the doc itself yet.
+  - Machine-checkable "done" → propose `[mode: autorun]` for suitable
+    phases — ones whose acceptance criteria read like a command that goes
+    green unattended.
+
 ## Rules
 
 - Ask at most ONE clarifying question per message, only for gaps the grill
