@@ -514,6 +514,87 @@ check_invariant_markers() {
   return "$bad"
 }
 
+# CHECK 10 — vocabulary consistency (docs/workflow-patterns spec FR1/FR10:
+# "the vocabulary appears in exactly one source of truth (`planning-docs`
+# skill) and consistent copies elsewhere are enforced by doctor"). Golden-
+# list-in-doctor pattern, as in check_invariant_markers: the id-set is
+# written down ONCE below and every carrying file is compared with it, so
+# a deliberate vocabulary change updates this golden in the same commit
+# and says why.
+#
+# One `vocab` entry per vocabulary dimension:
+#   '<dimension>|<golden ids>|<carrying files, source of truth first>'
+# A file carries an id when its text contains the `[<dimension>: <id>]`
+# form; a `|`-list (`[type: tdd|smoke]`) counts as every member, and the
+# template placeholder `[type: ...]` is NOT an id — ids are `[a-z]+`, so an
+# irregular id drops out of the parse and goes red as "missing", loudly,
+# never as a silent skip (same parser philosophy as CHECK 1).
+#
+# Comparison is file-vs-golden, not pairwise-file-to-file, so every FAIL
+# names exactly one file and one id, and drift is caught in EITHER
+# direction: a file that lost a golden id, or a file referencing an id
+# outside the vocabulary — an undeclared fifth tag appearing in the source
+# of truth goes red exactly like a consumer that stopped knowing one.
+#
+# PHASE 2 EXTENSION POINT (workflow-patterns Task 2.4, mode vocabulary):
+# add a second entry to the array below —
+#   'mode|sdd interactive autorun|.opencode/skills/planning-docs/SKILL.md …'
+# — the moment Task 2.1 has landed `[mode: …]` in the source of truth. The
+# mode dimension is deliberately ABSENT here, not present-and-enforced:
+# this phase's tree is legitimately mode-free, so enforcing it now would
+# fail a tree that is correct for Phase 1.
+#
+# Test seam (same spirit as DOCTOR_EXTRA_CHECKS, see header): an optional
+# first argument overrides $REPO_ROOT, so a throwaway harness drives this
+# check against scratch fixture trees without touching tracked files.
+check_tag_vocabulary_consistency() {
+  local root="${1:-$REPO_ROOT}" bad=0
+  local entry dim ids files src rel file have missing extra id role
+  local -a vocab=(
+    'type|tdd smoke spike|.opencode/skills/planning-docs/SKILL.md .opencode/agents/planner.md .opencode/commands/plan.md .opencode/agents/task-implementer.md'
+  )
+  for entry in "${vocab[@]}"; do
+    IFS='|' read -r dim ids files <<<"$entry"
+    src="${files%% *}"
+    for rel in $files; do
+      file="$root/$rel"
+      if [[ ! -f "$file" ]]; then
+        printf '%s-vocabulary: %s does not exist — its [%s: …] references cannot be checked\n' "$dim" "$rel" "$dim"
+        bad=1
+        continue
+      fi
+      if [[ "$rel" == "$src" ]]; then role="source of truth"; else role="consumer"; fi
+      have=$(grep -oE "\[$dim:[[:space:]]*[a-z|]+\]" "$file" \
+        | sed -E "s/^\[$dim:[[:space:]]*//; s/\]$//" | tr '|' '\n' | sort -u) || true
+      missing=$(comm -23 <(printf '%s\n' $ids | sed '/^$/d' | sort -u) \
+                         <(printf '%s\n' $have | sed '/^$/d' | sort -u)) || true
+      extra=$(comm -13 <(printf '%s\n' $ids | sed '/^$/d' | sort -u) \
+                       <(printf '%s\n' $have | sed '/^$/d' | sort -u)) || true
+      for id in $missing; do
+        if [[ "$role" == "source of truth" ]]; then
+          printf '%s-vocabulary drift: %s (source of truth) is missing [%s: %s] — golden set: %s; the vocabulary is defined once in this file, so define it here and reference it in every carrying file (a deliberate removal updates this golden in check_tag_vocabulary_consistency in scripts/doctor.sh in the same commit, with a reason)\n' \
+            "$dim" "$rel" "$dim" "$id" "$ids"
+        else
+          printf '%s-vocabulary drift: %s (%s) is missing [%s: %s] — golden set: %s; reference the id exactly as the source of truth %s defines it (a deliberate removal drops it from the source of truth AND from this golden in the same commit, with a reason)\n' \
+            "$dim" "$rel" "$role" "$dim" "$id" "$ids" "$src"
+        fi
+        bad=1
+      done
+      for id in $extra; do
+        if [[ "$role" == "source of truth" ]]; then
+          printf '%s-vocabulary drift: %s (source of truth) references [%s: %s], outside the golden set: %s; a new id goes into this golden in check_tag_vocabulary_consistency in scripts/doctor.sh AND every carrying file in the same commit\n' \
+            "$dim" "$rel" "$dim" "$id" "$ids"
+        else
+          printf '%s-vocabulary drift: %s (%s) references [%s: %s], which the source of truth %s does not define — remove the reference or define the id in the source of truth and this golden in the same commit\n' \
+            "$dim" "$rel" "$role" "$dim" "$id" "$src"
+        fi
+        bad=1
+      done
+    done
+  done
+  return "$bad"
+}
+
 register_check check_role_table_permissions
 register_check check_no_fill_in_placeholders
 register_check check_no_git_add_all
@@ -523,6 +604,7 @@ register_check check_grill_task_whitelist
 register_check check_agents_md_line_limit
 register_check check_watcher_ignore_entries
 register_check check_invariant_markers
+register_check check_tag_vocabulary_consistency
 
 # ---------------------------------------------------------------------------
 # Simulation stage (Task 3.4 — spec FR4): pure-git worktree-flow simulation
