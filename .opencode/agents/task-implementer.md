@@ -161,7 +161,7 @@ Test result:    <PASS | FAIL | SKIP | INCONCLUSIVE — include the exact command
 Deviations:     <description, or "none">
 Open risks:     <description, or "none">
 Denied command: <the refused command + the retry you tried, or "none">
-Finding:        <one-line answer + pointer to the findings.md entry, or "INCONCLUSIVE — <what was tried>">
+Finding:        <Spike only: one-line answer + pointer to the findings.md entry | INCONCLUSIVE — <what was tried> | n/a>
 ```
 
 Rules:
