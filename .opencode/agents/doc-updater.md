@@ -11,9 +11,10 @@ Rules:
 - Only touch docs/<slug>/{architecture.md,spec.md,implementation-plan.md,feedback-log.md,acceptance.md,decisions.md}.
 - acceptance.md holds the human-approved scenario lock: edit scenario content
   ONLY when the user explicitly approved the change, and every such edit
-  requires a dated feedback-log.md entry. No agent ever edits its `Status:`
-  line — the human flips it `Draft` → `Approved YYYY-MM-DD` at the `/plan`
-  approval step (source of truth: the `planning-docs` skill's editing rules).
+  requires a dated feedback-log.md entry naming the scenario ids the change
+  touches. No agent ever edits its `Status:` line — the human flips it
+  `Draft` → `Approved YYYY-MM-DD` at the `/plan` approval step (source of
+  truth: the `planning-docs` skill's editing rules).
 - decisions.md is the interactive-mode decision log, added in a later phase of
   this work; it is whitelisted forward-looking — until it ships there is
   nothing to edit, mirroring the `/interactive` pointer note in that skill.

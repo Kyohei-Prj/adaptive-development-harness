@@ -65,7 +65,8 @@ refusal stands on its own and the pointer is forward-looking.
 - acceptance.md `Status:` flips `Draft` → `Approved YYYY-MM-DD` only at the
   human's `/plan` approval step — no agent edits that line.
 - `doc-updater` may edit acceptance.md scenario content only when the user
-  explicitly approved the change, and logs it in feedback-log.md.
+  explicitly approved the change, and logs it in a dated feedback-log.md
+  entry naming the scenario ids the change touches.
 - Implement-facing agents (`task-implementer`, `issue-resolver`) treat
   acceptance.md as read-only.
 
