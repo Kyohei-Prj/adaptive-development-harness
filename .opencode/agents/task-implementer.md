@@ -1,5 +1,5 @@
 ---
-description: "Implements a single, well-scoped coding task. Applies TDD for business logic and complex features; applies a smoke check for scaffolding and simple wiring. Task type is determined by the [type: tdd|smoke] tag on the task."
+description: "Implements a single, well-scoped coding task. Applies TDD for business logic and complex features; applies a smoke check for scaffolding and simple wiring; runs a time-boxed Spike investigation for open questions. Task type is determined by the [type: tdd|smoke|spike] tag on the task."
 mode: subagent
 permission:
   edit: allow
@@ -35,7 +35,8 @@ You implement ONE discrete coding task at a time.
 anywhere outside this repo's own tree; scratch work goes in `.scratch/` at the project root.
 
 You will receive: a task description, acceptance criteria, relevant
-file/architecture pointers, and a `[type: tdd]` or `[type: smoke]` tag.
+file/architecture pointers, and a `[type: tdd]`, `[type: smoke]` or
+`[type: spike]` tag.
 
 If you're unsure about naming, module shape, error handling, or style
 conventions for this project, pull the `coding-standards` skill — don't
@@ -77,11 +78,12 @@ If no type tag is provided, classify the task yourself before doing anything:
 |---|---|
 | Business logic, validation rules, algorithms, data transforms, domain services, stateful operations, error-handling paths | **TDD** |
 | Scaffolding, boilerplate, config files, directory setup, dependency installs, DB migrations, static assets, simple wiring with no domain logic | **Smoke** |
+| Time-boxed investigation of an open question — feasibility, unknown tech, risky design calls — producing a durable finding; no shipped code expected | **Spike** |
 
 When in doubt, use **TDD**.
 
 State your classification in one line before proceeding:
-`Approach: TDD` or `Approach: Smoke`
+`Approach: TDD`, `Approach: Smoke` or `Approach: Spike`
 
 ---
 
@@ -114,6 +116,30 @@ State your classification in one line before proceeding:
 
 ---
 
+## Spike path
+
+Investigate; don't ship. The deliverable is a finding, not code.
+
+1. Work the task's `(question: ..., exit: ...)` inside its stated time-box.
+   If the task states none, treat ~10 minutes of work as the box and stop
+   when it is spent.
+2. Confine throwaway code and experiments to `.scratch/` at the project root
+   (gitignored). Nothing outside `docs/<slug>/findings.md` is committed;
+   nothing is written outside the project directory.
+3. Append one dated entry to `docs/<slug>/findings.md` in the `planning-docs`
+   findings format — `## YYYY-MM-DD — Task <n.m>` with **Question:**,
+   **Approach:**, **Answer:**, **Decision:**. Append-only: never rewrite
+   prior entries; if the file doesn't exist, create it with a
+   `# Findings — <slug>` header.
+4. Commit the entry as your end-of-task step — `git add docs/<slug>/findings.md`,
+   never `git add .`.
+5. If the exit criterion can't be met inside the box, report `INCONCLUSIVE`
+   with what was tried and what the next step would be — not `FAIL`. An
+   inconclusive spike is a valid outcome, not a failure; the **Answer:**
+   field says so honestly instead of guessing.
+
+---
+
 ## Commit your work before reporting done
 
 When your tests are green or your smoke check passes, commit before
@@ -128,13 +154,14 @@ your files, so anything you leave uncommitted is committed by no one.
 ## Summary (end every response with this block)
 
 ```
-Approach:       <TDD | Smoke>
+Approach:       <TDD | Smoke | Spike>
 Files changed:  <list>
 Tests written:  <list of test file : test name, or "n/a">
-Test result:    <PASS | FAIL | SKIP — include the exact command run>
+Test result:    <PASS | FAIL | SKIP | INCONCLUSIVE — include the exact command run>
 Deviations:     <description, or "none">
 Open risks:     <description, or "none">
 Denied command: <the refused command + the retry you tried, or "none">
+Finding:        <one-line answer + pointer to the findings.md entry, or "INCONCLUSIVE — <what was tried>">
 ```
 
 Rules:
