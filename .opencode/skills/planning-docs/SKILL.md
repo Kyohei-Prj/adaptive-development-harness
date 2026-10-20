@@ -34,7 +34,10 @@ Tags stack: `[type: tdd] [parallel-with: 1.1]` is valid.
 
 ## Phase mode tags
 
-Every phase in `implementation-plan.md` MAY carry a `[mode: ...]` tag.
+Every phase in `implementation-plan.md` SHOULD carry a `[mode: ...]` tag —
+new plans tag every phase, so no phase's mode is left implicit; an absent
+tag is not an error but the `[mode: sdd]` default that keeps plans written
+before mode tags existed running.
 Unlike task-level `[type: …]` tags, `[mode: …]` is **phase-level**: one tag
 per phase, written on the `## Phase N — <name>` heading line (or immediately
 under it), mirroring how `[type: …]` tags sit on task lines. Modes say *who*
