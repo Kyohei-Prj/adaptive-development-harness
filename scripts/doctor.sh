@@ -113,7 +113,7 @@ register_check() { CHECKS+=("$1"); }
 #     carry 27 denies each, task-implementer, issue-resolver, pair and
 #     characterizer 21, and lead 25 denies + 2 scoped allows
 #     (`git merge task/*`, `git mv docs/* docs/_archive/*`).
-#   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 6 above)
+#   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 7 above)
 #     and whole-string `bash: deny` (doc-updater, planner, grill) — the
 #     latter golden exactly ONE "string deny" line per agent (wholesale
 #     bash deny; its resolved entry-diff would be semantically inert).
