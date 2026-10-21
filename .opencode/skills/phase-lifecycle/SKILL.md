@@ -32,6 +32,16 @@ appears once, as the conventional-commit scope, never repeated in the
 description; the three phase-implementation commands emit exactly this after
 `$1`/`$2` substitution.
 
+An `[mode: interactive]` phase (semantics: the `planning-docs` skill, "Phase
+mode tags") records **no** row here and never has a phase branch —
+`implement-phase*`'s mode gate refuses before this part runs, and the `pair`
+agent works on whatever branch is already checked out. It is reviewed by the
+human inside the `/interactive` loop rather than by `/review-phase*`, whose own
+mode gate refuses it for exactly this lack of baseline. So a missing row here
+is that phase's expected state, not an anomaly to repair; its task checkboxes
+in `implementation-plan.md` get flipped by the human, or by `lead` when the
+loop closes the phase, since the loop's own steps never touch that file.
+
 ## B. Parallel task execution (worktrees)
 
 Applies whenever a phase's task list includes `[parallel-with: ...]` tags.
