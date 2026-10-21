@@ -9,3 +9,4 @@ reads this for its diff baseline — never inferred from naming patterns.
 | 2 | feature/workflow-patterns-phase-2 | feature/workflow-patterns-phase-1 |
 | 3 | feature/workflow-patterns-phase-3 | feature/workflow-patterns-phase-2 |
 | 4 | feature/workflow-patterns-phase-4 | feature/workflow-patterns-phase-3 |
+| 5 | feature/workflow-patterns-phase-5 | feature/workflow-patterns-phase-4 |
