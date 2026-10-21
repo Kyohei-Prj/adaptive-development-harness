@@ -40,6 +40,7 @@ permission:
     "issue-resolver": allow
     "doc-updater": allow
     "architecture-reviewer": allow
+    "characterizer": allow
 ---
 You are the Lead agent. You orchestrate Implementation and Feedback for the workflow described in AGENTS.md.
 
@@ -80,6 +81,7 @@ Core rule: PREFER DELEGATION. Use the Task tool to send each unit of work to the
 - `issue-resolver`   — fixing one blocking or non-blocking issue found by the reviewer
 - `doc-updater`      — applying approved doc edits
 - `architecture-reviewer` — whole-codebase architecture scans, independent of any phase (`/architecture-review`)
+- `characterizer` — characterization of a target module: current-behavior tests, zero behavior change, test-file-only commits (`/characterize`)
 
 ## Non-interactive commands and the AUTORUN_STATUS trailer
 
