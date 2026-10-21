@@ -109,10 +109,10 @@ register_check() { CHECKS+=("$1"); }
 #     deny — the exact silent-failure class this slug exists to catch —
 #     so the golden diff is order-sensitive by construction.
 #   * Per-agent reality, not a uniform shared-17 (feedback-log NB5): the
-#     6 map-form agents differ — architecture-reviewer and phase-reviewer
-#     carry 27 denies each, task-implementer, issue-resolver and pair 21,
-#     and lead 25 denies + 2 scoped allows (`git merge task/*`,
-#     `git mv docs/* docs/_archive/*`).
+#     7 map-form agents differ — architecture-reviewer and phase-reviewer
+#     carry 27 denies each, task-implementer, issue-resolver, pair and
+#     characterizer 21, and lead 25 denies + 2 scoped allows
+#     (`git merge task/*`, `git mv docs/* docs/_archive/*`).
 #   * Both shapes of the `bash:` key (Phase 1 NB4): map form (the 6 above)
 #     and whole-string `bash: deny` (doc-updater, planner, grill) — the
 #     latter golden exactly ONE "string deny" line per agent (wholesale
@@ -168,6 +168,29 @@ architecture-reviewer	deny	*push --force*
 architecture-reviewer	deny	*push -f *
 architecture-reviewer	deny	git worktree remove --force*
 architecture-reviewer	deny	*worktree remove --force*
+characterizer	map	
+characterizer	allow	*
+characterizer	deny	git push --force*
+characterizer	deny	git push -f*
+characterizer	deny	git push origin +*
+characterizer	deny	rm -rf*
+characterizer	deny	rm -fr*
+characterizer	deny	git reset --hard*
+characterizer	deny	git checkout -- .*
+characterizer	deny	git checkout --force*
+characterizer	deny	git clean -f*
+characterizer	deny	git branch -D*
+characterizer	deny	*rm -rf*
+characterizer	deny	*rm -fr*
+characterizer	deny	*reset --hard*
+characterizer	deny	*checkout -- .*
+characterizer	deny	*checkout --force*
+characterizer	deny	*git clean -f*
+characterizer	deny	*push --force*
+characterizer	deny	*push -f *
+characterizer	deny	*branch -D*
+characterizer	deny	git worktree remove --force*
+characterizer	deny	*worktree remove --force*
 doc-updater	string	deny
 grill	string	deny
 issue-resolver	map	
