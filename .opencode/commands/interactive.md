@@ -6,7 +6,7 @@ Run the interactive pair loop for `$1`. This command takes exactly ONE argument 
 
 ## Resolve the slug before the first loop step
 
-1. `$1` is `new` → propose a short kebab-case slug for what we're working on, confirm it with me, then create a minimal slug dir `docs/<slug>/` containing ONLY `decisions.md` — a `# Decisions — <slug>` header and no entries yet. Do NOT create the other planning docs: architecture/spec/implementation-plan are what `/plan` produces later if this work graduates to SDD.
+1. `$1` is `new` → propose a short kebab-case slug for what we're working on, confirm it with me, then create a minimal slug dir `docs/<slug>/` containing ONLY `decisions.md` — a `# Decisions — <slug>` header and no entries yet — then commit that one file (`git add docs/<slug>/decisions.md && git commit -m "docs(<slug>): start decision log"`), so the bootstrap is never left sitting untracked on the loop's branch. Do NOT create the other planning docs: architecture/spec/implementation-plan are what `/plan` produces later if this work graduates to SDD.
 2. `docs/$1/decisions.md` exists → this is a continuation: read `docs/$1/decisions.md` end-to-end before anything else. Earlier entries are aligned input — don't re-litigate a logged decision unless I raise it.
 3. `$1` looks like a slug but `docs/$1/decisions.md` doesn't exist → ask me whether this is new work; if yes, bootstrap exactly as in case 1, if no, stop and re-confirm the slug.
 
