@@ -406,7 +406,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 | `/plan <idea or grill summary>` | `planner` | Free-text headline or pasted design-concept summary | Start a Planning session |
 | `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks (interactive) |
 | `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs (interactive) |
-| `/interactive <slug|new>` | `pair` | Slug, or `new` to start one | Human-paced pair loop for a slug — one inspected, approved step at a time, decisions logged to `decisions.md`; the entry point `[mode: interactive]` phases are routed to instead of delegated tasks |
+| `/interactive <slug\|new>` | `pair` | Slug, or `new` to start one | Human-paced pair loop for a slug — one inspected, approved step at a time, decisions logged to `decisions.md`; the entry point `[mode: interactive]` phases are routed to instead of delegated tasks |
 | `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically, one checkpoint per phase, single continuous session |
 | `/implement-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/implement-phase` — no confirmation, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
 | `/review-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/review-phase` — auto-resolves all issues, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
@@ -480,7 +480,7 @@ Phases — not tasks — carry `[mode: …]` tags, written on the `## Phase N �
 - `[mode: autorun]` → the unattended run (`/autorun`, `scripts/autorun.sh`)
 ```
 
-**An absent tag means `[mode: sdd]`** — every plan written before mode tags existed keeps running unchanged. The gate on the automation side: `/implement-phase*` given a `[mode: interactive]` phase refuse to delegate and point to `/interactive`, and a headless run halts at that phase with a `NEEDS_HUMAN` status trailer rather than skipping ahead silently. The vocabulary's source of truth is the `planning-docs` skill ("Phase mode tags"). The Pattern Record's four answers fix these tags — and one of them, mistake cost, has a consequence outside the mode vocabulary: a high answer makes the planner draft exact acceptance scenarios in [`acceptance.md`](#document-templates).
+**An absent tag means `[mode: sdd]`** — every plan written before mode tags existed keeps running unchanged. The gate on the automation side: `/implement-phase*` given a `[mode: interactive]` phase refuse to delegate and point to `/interactive`, and a headless run halts at that phase with a `NEEDS_HUMAN` status trailer rather than skipping ahead silently; `/review-phase*` refuse such a phase too — it has no phase branch and therefore no `phase-branches.md` diff baseline, because the human at each step of the loop was that phase's review gate. The vocabulary's source of truth is the `planning-docs` skill ("Phase mode tags"). The Pattern Record's four answers fix these tags — and one of them, mistake cost, has a consequence outside the mode vocabulary: a high answer makes the planner draft exact acceptance scenarios in [`acceptance.md`](#document-templates).
 
 ---
 
