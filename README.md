@@ -354,7 +354,7 @@ This repo makes a pile of *structural* claims about itself — denylist copies s
 scripts/doctor.sh
 ```
 
-**What it checks** — nine static checks, then a simulation stage:
+**What it checks** — twelve static checks, then a simulation stage:
 
 1. **Denylist drift** — every agent file's parsed `bash:` permission stream matches the recorded golden exactly, *in order* (a deny only protects when it sits after its agent's `"*": allow` catch-all — presence in resolved output proves nothing), and the failed shared-denylist hoist stays failed: no top-level `permission` key in the shipped config.
 2. **No unfinished prompts** — no `<fill in` template placeholder anywhere under `.opencode/`.
@@ -365,6 +365,9 @@ scripts/doctor.sh
 7. **AGENTS.md budget** — ≤80 lines; past that budget it's a tax, not a map.
 8. **Watcher entries** — the 11 shipped `watcher.ignore` entries are still present in `.opencode/opencode.json`; presence-only, because the rot this guards is an accidental removal, not a deliberate addition.
 9. **Invariant markers** — the two `<!-- invariant: … -->` markers in the `phase-lifecycle` skill are present: the positive-presence counterweight to the absence-checks, so a condensation pass can't silently *delete* a required step.
+10. **Tag vocabulary** — every `[type: …]` / `[mode: …]` id in the carrying files matches the golden set defined once in the `planning-docs` skill, checked against the golden in both directions — a file that lost an id or references an undeclared one goes red, naming just that file.
+11. **Mode-gate contract** — each of the three implement commands carries its `[mode: …]` Mode gate step before the phase-branch-setup step, names the proceed paths, and states that the `[mode: interactive]` refusal commits nothing — so a refusal mutates no git state.
+12. **Acceptance-review contract** — `phase-reviewer` keeps its "Acceptance scenario compliance" section (per-scenario green evidence, plus the `acceptance.md` diff lock whose only exception is a logged approval), and `/review-phase` still surfaces that section in the presented report.
 
 Then the **worktree-flow simulation** exercises the git discipline of `phase-lifecycle` part B against a throwaway `git init` repo, asserting four scenarios: a dirty worktree → cleanup refuses; commit + sequential merge → the gate passes and cleanup lands the merge; a docs-only lead commit is correctly discriminated from a mixed docs+code commit; committed-but-unmerged work is never cleaned up. Pure git throughout — it never invokes `opencode` and never touches the harness repo's own git state. Nothing fails fast: the complete list of broken steps is the diagnosis.
 
@@ -725,7 +728,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Agents stay inside the project directory, on purpose.** `lead`, `task-implementer`, and `issue-resolver` are instructed to never `cd` outside the repo — any exploratory or scratch work (probing whether a package installs cleanly or a tool version is compatible before delegating a real task, a throwaway build) goes in `.scratch/` at the project root instead. This isn't just tidiness: OpenCode gates file operations outside the project root behind a separate `external_directory` permission that no agent here has, and that gate auto-rejects with no one around to approve it in a headless run. Even if the gate weren't there, keeping an unattended agent's reach inside the repo is simply the smaller blast radius. The shipped `.gitignore` already ignores it (for a project adopting the harness into an existing repo, it's one of the three lines to merge in); it's also already excluded from the file watcher.
 
-**Hard-blocked commands are intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, and `git branch -D` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
+**Hard-blocked commands are intentionally hardcoded, not configurable per-task.** Every shipped agent file that grants bash access carries the same denies in its frontmatter and will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, and `git branch -D` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
 **That denylist is deliberately duplicated across the 7 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/_archive/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
 
