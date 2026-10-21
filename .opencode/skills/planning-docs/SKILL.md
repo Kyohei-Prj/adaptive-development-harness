@@ -10,6 +10,7 @@ docs/<slug>/acceptance.md       (only when the Pattern Record flags high mistake
 docs/<slug>/feedback-log.md
 docs/<slug>/phase-branches.md   (created by `lead`, not `planner` — see below)
 docs/<slug>/findings.md         (appended by the spike's `task-implementer`, not `planner` — see below)
+docs/<slug>/decisions.md        (appended by the `pair` agent, not `planner` — see below)
 
 `<slug>` = short kebab-case id agreed during Planning.
 
@@ -273,4 +274,26 @@ Append-only: one entry per spike, prior entries never rewritten.
 **Answer:** ...
 
 **Decision:** ...
+```
+
+---
+
+### decisions.md
+
+Not written by `planner` — the `pair` agent appends one dated mini-ADR
+entry per decision made during the `/interactive` loop
+(`/interactive` owns the loop, `pair` the appending). Append-only: one
+entry per decision, prior entries never rewritten. When the work
+graduates to `/plan`, `planner` reads the log end-to-end as aligned
+input before asking questions.
+
+```markdown
+# Decisions — <slug>
+
+## YYYY-MM-DD — <short decision title>
+**Decision:** ...
+
+**Why:** ...
+
+**Alternatives considered:** ...
 ```

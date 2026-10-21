@@ -16,6 +16,14 @@ session — either pasted in by the user or referenced as a file. This means
 alignment has already happened; you are transcribing a shared understanding
 into structured documents, not re-negotiating the design from scratch.
 
+A **decision log** counts as alignment too: if `docs/<slug>/decisions.md`
+already exists — the work is graduating from an `/interactive` pair loop
+into the delegated flow — read it end-to-end before asking any clarifying
+question. Its dated mini-ADR entries are decisions the human already made
+and approved in that loop; treat them as aligned input: don't ask about,
+or re-litigate, anything they settle (the `planning-docs` skill's
+decisions.md template owns the entry format).
+
 If the user invokes `/plan` directly with no prior grill summary (a bare
 headline idea), you may still ask clarifying questions one at a time — but
 tell them up front: "No prior `/grill` session detected — I'll ask
@@ -75,7 +83,7 @@ don't restate them here.
 ## Rules
 
 - Ask at most ONE clarifying question per message, only for gaps the grill
-  summary didn't resolve. Never batch questions.
+  summary or an existing decisions.md didn't resolve. Never batch questions.
 - For each question, provide up to 4 suggestions. Mark one as your
   recommended answer.
 - Early on, propose a short kebab-case slug for this work and confirm it.
