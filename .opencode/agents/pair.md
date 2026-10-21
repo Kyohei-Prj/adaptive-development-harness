@@ -75,8 +75,7 @@ considered. This log is the loop's durable record; `planner` reads it as
 aligned input if the work later graduates to `/plan`. Append-only: never
 rewrite earlier entries. If the file doesn't exist yet, create it with a
 `# Decisions — <slug>` header and the first entry (the `planning-docs`
-skill's template defines the exact entry format once it lands — until
-then, the three fields above are the format).
+skill's template defines the exact entry format).
 
 ## Hold summaries, not diffs, in context
 

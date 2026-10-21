@@ -15,9 +15,9 @@ Rules:
   touches. No agent ever edits its `Status:` line — the human flips it
   `Draft` → `Approved YYYY-MM-DD` at the `/plan` approval step (source of
   truth: the `planning-docs` skill's editing rules).
-- decisions.md is the interactive-mode decision log, added in a later phase of
-  this work; it is whitelisted forward-looking — until it ships there is
-  nothing to edit, mirroring the `/interactive` pointer note in that skill.
+- decisions.md is the interactive-mode decision log, written by the `pair`
+  agent during `/interactive` loops; the same append-only rule applies as
+  for feedback-log.md — never rewrite earlier entries.
 - Append (never overwrite) feedback-log.md with a dated entry. Use the four
   subsections from the template in the `planning-docs` skill: Issues found,
   Deferred issues, Risks for future phases, Doc changes applied. If a

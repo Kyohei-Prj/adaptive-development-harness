@@ -55,10 +55,6 @@ implements the phase — orthogonal to the task-level `[type: …]` vocabulary.
 before mode tags existed: an untagged phase runs the existing delegated SDD
 flow unchanged.
 
-`/interactive`, the interactive-mode entry point `[mode: interactive]`
-points to, is added in a later phase of this work — until it ships, the
-refusal stands on its own and the pointer is forward-looking.
-
 ## Editing rules
 - During Feedback, make targeted edits — never regenerate a doc from scratch.
 - Always append a dated entry to feedback-log.md when architecture/spec/plan
