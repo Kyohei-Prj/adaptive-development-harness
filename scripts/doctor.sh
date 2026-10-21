@@ -728,7 +728,7 @@ check_mode_gate_contract() {
       bad=1
     }
     if [[ "$n" == "implement-phase.md" ]]; then
-      # interactive entry point: refusal + forward-looking /interactive pointer
+      # interactive entry point: refusal + /interactive pointer
       gate14=$(grep -A14 -i 'Mode gate' "$root/$f") || true
       grep -Eqi 'refus' <<<"$gate14" || {
         printf 'mode-gate drift: implement-phase.md — the Mode gate step contains no refusal of [mode: interactive] — the interactive command must stop and not delegate (spec FR4; a deliberate change to the refusal updates the step and this check in scripts/doctor.sh in the same commit, with a reason)\n'
