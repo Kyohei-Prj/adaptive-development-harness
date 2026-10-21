@@ -496,6 +496,10 @@ All templates are embedded in `.opencode/skills/planning-docs/SKILL.md` and are 
 
 **`acceptance.md`** — Conditional: only for slugs whose Pattern Record flags high mistake cost. Numbered Given/When/Then scenarios the implementation is verified against — coarse acceptance criteria stay in `spec.md`. Header carries `Status: Draft` → `Status: Approved YYYY-MM-DD`, flipped only by the human at the `/plan` approval step.
 
+**`findings.md`** — Not written by `planner`: the spike's `task-implementer` appends a dated entry — question, approach, answer, decision — per `[type: spike]` task as its end-of-task step, append-only, with the throwaway spike code itself kept in gitignored `.scratch/`.
+
+**`decisions.md`** — Not written by `planner`: the `pair` agent appends a dated mini-ADR entry — decision, why, alternatives considered — per decision made during a `/interactive` loop, append-only, and read end-to-end by `planner` as aligned input if the work graduates to `/plan`.
+
 **`feedback-log.md`** — Append-only. One dated entry per reviewed phase: issues found, deferred issues, risks for future phases, doc changes applied.
 
 **`phase-branches.md`** — Written by `lead`, not `planner`. One row per phase: phase number, its branch, and the exact base branch it was created from — read by `phase-reviewer` for its diff baseline instead of inferring it.
