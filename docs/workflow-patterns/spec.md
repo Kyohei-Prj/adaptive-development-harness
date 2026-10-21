@@ -41,13 +41,13 @@ The harness gains five pattern primitives from `docs/workflow-patterns-blueprint
 
 ## Acceptance criteria
 
-- [ ] A `[type: spike]` task dispatched to `task-implementer` classifies as Spike, confines throwaway work to `.scratch/`, and appends a well-formed entry to `findings.md` (FR1, dogfood run)
-- [ ] `planner` guidance produces a tracer-bullet Phase 0 recommendation for an unproven-architecture scenario and omits it for a brownfield one (FR2)
-- [ ] `/plan` flow records a Pattern Record and `[mode:]` tag on every phase; an `[mode: interactive]` phase makes `implement-phase` refuse and `implement-phase-auto` emit `NEEDS_HUMAN` (FR3, FR4)
-- [ ] With `acceptance.md` present: reviewer flags an unapproved scenario edit as blocking and a logged-approval edit as acceptable; implementer prompts state read-only (FR5, FR6)
-- [ ] `/interactive` completes one full discuss→implement→inspect loop in a throwaway repo, with a `decisions.md` entry and a per-step commit (FR7)
-- [ ] `/characterize <target>` yields passing tests and a behavior-zero diff outside test files (FR8)
-- [ ] `scripts/doctor.sh` exits green; README counts match `find` counts; AGENTS.md ≤ 80 lines (FR9, FR10)
+- [x] A `[type: spike]` task dispatched to `task-implementer` classifies as Spike, confines throwaway work to `.scratch/`, and appends a well-formed entry to `findings.md` (FR1, dogfood run)
+- [x] `planner` guidance produces a tracer-bullet Phase 0 recommendation for an unproven-architecture scenario and omits it for a brownfield one (FR2)
+- [x] `/plan` flow records a Pattern Record and `[mode:]` tag on every phase; an `[mode: interactive]` phase makes `implement-phase` refuse and `implement-phase-auto` emit `NEEDS_HUMAN` (FR3, FR4)
+- [x] With `acceptance.md` present: reviewer flags an unapproved scenario edit as blocking and a logged-approval edit as acceptable; implementer prompts state read-only (FR5, FR6) — met on fixture + static evidence; this slug has no `acceptance.md`, so never exercised on a real one
+- [x] `/interactive` completes one full discuss→implement→inspect loop in a throwaway repo, with a `decisions.md` entry and a per-step commit (FR7) — the human inspect/approve checkpoints were SIMULATED in every dogfood; the loop has not yet been exercised end-to-end by a real human
+- [x] `/characterize <target>` yields passing tests and a behavior-zero diff outside test files (FR8)
+- [x] `scripts/doctor.sh` exits green; README counts match `find` counts; AGENTS.md ≤ 80 lines (FR9, FR10)
 
 ## Constraints / assumptions
 
