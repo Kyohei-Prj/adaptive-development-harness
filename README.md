@@ -111,7 +111,7 @@ User idea
 - **Explicit over inferred** — task type (`[type: tdd]` / `[type: smoke]` / `[type: spike]`), parallelism (`[parallel-with: X]`), and phase goals are written into the plan at planning time, not decided at runtime. Reviewer findings are classified as blocking or non-blocking at review time, not interpreted by the lead.
 - **Mechanics live in one place** — phase-branch setup, worktree-isolated parallel execution, and issue-resolution delegation are the same underlying procedures whether triggered by `/implement-phase`, `/autorun`, or the headless `*-auto` commands. They're defined once in the `phase-lifecycle` skill and referenced everywhere, not copy-pasted per command — six near-identical copies is exactly the situation that lets one silently drift from the rest.
 - **Document-first, but not permanent** — architecture, spec, and implementation plan are the source of truth during a unit of work. They evolve via the Feedback stage, never silently — and once a slug's phases are all merged, consider archiving `docs/<slug>/` rather than leaving it live to go stale and mislead a future session.
-- **Minimal footprint, not minimal correctness** — 8 agent files, 10 command files, 4 skills, 2 scripts. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
+- **Minimal footprint, not minimal correctness** — 9 agent files, 11 command files, 4 skills, 2 scripts. More surface area than a bare-bones setup, but every piece exists because a leaner version of this repo actually hit the problem it solves (a guessed diff baseline, a copy-pasted procedure that drifted, an unattended session with no destructive-command guardrail). No plugins, no MCP servers required beyond what you already had.
 
 ---
 
@@ -138,6 +138,7 @@ your-project/
 │   │   ├── grill.md                     # Primary — Grill (alignment) stage
 │   │   ├── planner.md                   # Primary — Planning stage
 │   │   ├── lead.md                      # Primary — Implementation & Feedback
+│   │   ├── pair.md                      # Primary — interactive pair loop (human-approved steps)
 │   │   ├── task-implementer.md          # Subagent — executes one planned coding task
 │   │   ├── phase-reviewer.md            # Subagent — classifies issues, read-only review
 │   │   ├── issue-resolver.md            # Subagent — fixes one blocking or non-blocking issue
@@ -148,6 +149,7 @@ your-project/
 │   │   ├── plan.md                      # /plan <idea or grill summary>
 │   │   ├── implement-phase.md           # /implement-phase <n> <slug>
 │   │   ├── review-phase.md              # /review-phase <n> <slug>
+│   │   ├── interactive.md               # /interactive <slug|new>
 │   │   ├── autorun.md                   # /autorun <slug> (in-chat, one checkpoint per phase)
 │   │   ├── implement-phase-auto.md      # /implement-phase-auto <n> <slug> (headless — used by scripts/autorun.sh)
 │   │   ├── review-phase-auto.md         # /review-phase-auto <n> <slug> (headless — used by scripts/autorun.sh)
@@ -383,6 +385,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 | `grill` | primary | Alignment-only interview, no docs, no code | edit: deny · bash: deny · webfetch: ask · task: explore/scout only |
 | `planner` | primary | Transcribes an aligned design concept into docs, structured as vertical slices | edit: allow · bash: deny · webfetch: allow |
 | `lead` | primary | Orchestrates, delegates, summarizes; owns worktree creation/merge for parallel task groups and `phase-branches.md` | edit: allow (bookkeeping only — `phase-branches.md` rows + `implementation-plan.md` checkbox flips, by convention) · bash: allow with hard-blocked commands + push + scope denials · webfetch: allow · task: whitelisted 5 subagents only |
+| `pair` | primary | Runs the interactive pair loop — discuss → implement one small human-approved step → the human inspects → commit; one reviewable commit per step, every decision logged to `docs/<slug>/decisions.md`; stays on the current branch, never a phase branch or worktree | edit/bash/webfetch: allow with hard-blocked commands · task: `task-implementer`/`explore` only |
 | `task-implementer` | subagent | Implements one planned task (TDD or Smoke); pulls `coding-standards` if unsure; may be pointed at a git worktree for parallel work | edit/bash/webfetch: allow with hard-blocked commands · task: deny |
 | `phase-reviewer` | subagent | Read-only review, diffs against the base recorded in `phase-branches.md`, classifies blocking/non-blocking issues, compliance + architecture check; standards pushed inline; optionally pinned to a stronger model; also runs in finalize mode for `/finalize` | edit: deny · bash: allow with hard-blocked commands + commit/add/push denials |
 | `issue-resolver` | subagent | Fixes one blocking or non-blocking issue found by reviewer (TDD or Smoke) — does not act on speculative future-phase risks; same hard-blocked commands as `task-implementer` | edit/bash/webfetch: allow · task: deny |
@@ -403,6 +406,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 | `/plan <idea or grill summary>` | `planner` | Free-text headline or pasted design-concept summary | Start a Planning session |
 | `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks (interactive) |
 | `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs (interactive) |
+| `/interactive <slug>` | `pair` | Slug, or `new` to start one | Human-paced pair loop for a slug — one inspected, approved step at a time, decisions logged to `decisions.md`; the entry point `[mode: interactive]` phases are routed to instead of delegated tasks |
 | `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically, one checkpoint per phase, single continuous session |
 | `/implement-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/implement-phase` — no confirmation, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
 | `/review-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/review-phase` — auto-resolves all issues, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
@@ -715,7 +719,7 @@ This is informational only — `lead` doesn't pause for confirmation, it just co
 
 **Hard-blocked commands are intentionally hardcoded, not configurable per-task.** `task-implementer` and `issue-resolver` will refuse force-push, `rm -rf`, `git reset --hard`, `git checkout -- .`/`--force`, `git clean -f`, and `git branch -D` no matter how the task is phrased, including during unattended `/autorun` runs. If a task genuinely needs one of these, do it yourself.
 
-**That denylist is deliberately duplicated across the 5 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/_archive/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
+**That denylist is deliberately duplicated across the 6 bash-agent files — don't "DRY" it up.** Hoisting it once into the shipped config's top-level `permission.bash` was gate-experimented and **proven unsafe**: an agent frontmatter's `"*": allow` catch-all out-votes config-layer denies at execution time (v1.18.35; first observed on v1.18.34), silently disarming every shared deny — and the deny still *appears* in `opencode debug agent` output, so presence checks can't catch it. The gate experiments and the disproof probe are recorded in `docs/_archive/harness-streamlining/gate-experiments.md`. A `scripts/doctor.sh` drift check keeps the copies in sync today — it ships as [check 1 of the static self-check suite](#doctorsh--static-self-check-suite-harness-repo-only).
 
 **`/finalize` and `/archive` are manual, on purpose.** Nothing in this workflow merges to main or archives docs automatically — `/finalize` prepares the branch, you merge it, then `/archive` cleans up. `lead` will remind you of both at the natural points (end of `/autorun`, end of the last `/review-phase`), but won't run either without you invoking them.
 
