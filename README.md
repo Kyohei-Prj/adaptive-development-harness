@@ -406,7 +406,7 @@ Then the **worktree-flow simulation** exercises the git discipline of `phase-lif
 | `/plan <idea or grill summary>` | `planner` | Free-text headline or pasted design-concept summary | Start a Planning session |
 | `/implement-phase <n> <slug>` | `lead` | Phase number, slug | Implement one phase by delegating tasks (interactive) |
 | `/review-phase <n> <slug>` | `lead` | Phase number, slug | Review a phase and update docs (interactive) |
-| `/interactive <slug>` | `pair` | Slug, or `new` to start one | Human-paced pair loop for a slug — one inspected, approved step at a time, decisions logged to `decisions.md`; the entry point `[mode: interactive]` phases are routed to instead of delegated tasks |
+| `/interactive <slug|new>` | `pair` | Slug, or `new` to start one | Human-paced pair loop for a slug — one inspected, approved step at a time, decisions logged to `decisions.md`; the entry point `[mode: interactive]` phases are routed to instead of delegated tasks |
 | `/autorun <slug>` | `lead` | Slug | Implement **all** phases and run Feedback for each automatically, one checkpoint per phase, single continuous session |
 | `/implement-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/implement-phase` — no confirmation, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |
 | `/review-phase-auto <n> <slug>` | `lead` | Phase number, slug | Headless twin of `/review-phase` — auto-resolves all issues, ends with `AUTORUN_STATUS:` trailer. Used by `scripts/autorun.sh`; not usually invoked directly. |

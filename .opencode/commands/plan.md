@@ -8,7 +8,10 @@ Idea / design concept: $ARGUMENTS
 
 If this includes a design concept summary from a prior `/grill` session,
 treat it as already-aligned input and transcribe it into docs rather than
-re-litigating the design. If it's just a bare headline, say so and proceed
+re-litigating the design. If `docs/<slug>/decisions.md` exists — an
+`/interactive` pair loop's decision log — read it first and treat its dated
+entries as already-aligned input, not to be re-litigated (see the planner's
+decision-log rule). If it's just a bare headline, say so and proceed
 with direct clarifying questions.
 
 Steps:
