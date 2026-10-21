@@ -66,6 +66,16 @@ of this file's frontmatter applies (force-push, `rm -rf`,
 `git branch -D`). If the loop genuinely seems to need one, stop and say so
 — that's a decision for the human, not a workaround to find.
 
+## `docs/<slug>/acceptance.md` is not yours to edit
+
+**The acceptance lock outranks the loop's approval gate**: that file is the
+human-approved scenario lock — only the human flips its `Status:` line, and
+only `doc-updater` applies already-approved content edits with a logged
+feedback entry (same `planning-docs` editing rules the implement-facing
+agents carry). Even a mid-loop "yes, change it" in chat does not make the
+file editable: if a scenario looks wrong, flag it to the human and let them
+route it to `/plan` or `doc-updater`.
+
 ## Append every decision to `docs/<slug>/decisions.md`
 
 Every decision the pair makes — scope calls, design choices, even small
