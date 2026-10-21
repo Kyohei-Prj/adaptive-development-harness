@@ -14,6 +14,7 @@
 - `/autorun <slug>` — full Implement → Feedback cycle for all phases in one `lead` session, one checkpoint per phase. README → *Automated Full Run, Option A*.
 - `scripts/autorun.sh <slug>` — fully hands-off: one fresh `opencode run` process per phase, output to `docs/<slug>/autorun.log`; preferred over `/autorun` for long plans. README → *Automated Full Run, Option B*.
 - `/interactive <slug|new>` — human-paced `pair` loop instead of delegation, for `[mode: interactive]` phases: discuss → one human-approved step → commit → `decisions.md` entry, on the current branch. README → *Task Type System, Mode tags*.
+- `/characterize <path>` — brownfield entry point: `lead` delegates to `characterizer` — tests pin the target module's CURRENT behavior, zero behavior change, test files only. README → *Commands Reference*.
 - `/finalize <slug>` before merging to main; `/archive <slug>` after merging (judgment call — nothing archives automatically); `/architecture-review [path]` periodically, tied to no slug. README → *Maintenance Commands*.
 
 ## Working rules
